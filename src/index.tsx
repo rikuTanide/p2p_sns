@@ -71,6 +71,7 @@ function connect(
             const [method, ...payload] = JSON.parse(data);
             if (method === "member-peer-ids") {
               const memberPeerIDs = payload[0] as string[];
+              console.log(memberPeerIDs);
               for (const memberID of memberPeerIDs)
                 connect(own, memberID, ownPublicKeyJson, ownPrivateKey);
             } else {
@@ -122,7 +123,6 @@ async function createAuthRequest(
   );
   // @ts-ignore
   const sign = bufferToString(encMessage);
-  console.log(sign);
   return JSON.stringify([connectionID, ownPublicKeyJson, sign]);
 }
 
@@ -154,7 +154,6 @@ async function validateAuthRequest(
 ): Promise<boolean> {
   if (id != authRequest.connectionID) return false;
   const truthPayload = authRequest.connectionID + authRequest.otherPublicKey;
-  console.log(truthPayload);
   const pjwk = JSON.parse(authRequest.otherPublicKey) as JsonWebKey;
   const publicKey = await importKey(pjwk);
 
@@ -171,7 +170,7 @@ async function validateAuthRequest(
 }
 
 function createMembersMessage(): string {
-  return JSON.stringify(["member-peer-ids", connections.map((c) => c.id)]);
+  return JSON.stringify(["member-peer-ids", connections.map((c) => c.remoteId)]);
 }
 
 async function hash(payload: string): Promise<string> {
