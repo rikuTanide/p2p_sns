@@ -75,7 +75,7 @@ function connect(
               for (const memberID of memberPeerIDs)
                 connect(own, memberID, ownPublicKeyJson, ownPrivateKey);
             } else {
-              onMessage(other.remoteId, data[1]);
+              onMessage(other.remoteId, payload[0]);
             }
             return;
           }
@@ -145,7 +145,7 @@ function parseAuthRequest(data: any): AuthRequest {
 
 function bufferToString(buf: ArrayBuffer) {
   // @ts-ignore
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
 }
 
 async function validateAuthRequest(
@@ -170,13 +170,27 @@ async function validateAuthRequest(
 }
 
 function createMembersMessage(): string {
-  return JSON.stringify(["member-peer-ids", connections.map((c) => c.remoteId)]);
+  return JSON.stringify([
+    "member-peer-ids",
+    connections.map((c) => c.remoteId),
+  ]);
 }
 
 async function hash(payload: string): Promise<string> {
   const payloadAb = stringToArrayBuffer(payload);
   const digest = await window.crypto.subtle.digest("sha-256", payloadAb);
   return bufferToString(digest);
+}
+
+async function setSelfConnection(publicKeyJson: string, ownPeerID: string) {
+  const userHash = await hash(publicKeyJson);
+  const user: User = { userHash: userHash };
+  users.set(userHash, user);
+  const connectionUser: ConnectionUser = {
+    peerID: ownPeerID,
+    userHash: userHash,
+  };
+  connectionUsers.set(ownPeerID, connectionUser);
 }
 
 async function onConnected(other: DataConnection, authRequest: AuthRequest) {
@@ -242,7 +256,7 @@ function listenConnection(
             return;
           }
           case "authorized": {
-            onMessage(other.remoteId, data[1]);
+            onMessage(other.remoteId, JSON.parse(data)[1]);
             return;
           }
           default: {
@@ -254,16 +268,18 @@ function listenConnection(
   });
 }
 
-function setMessageInputBox() {
+function setMessageInputBox(ownPeerID: string) {
   const textBox = document.createElement("input");
   textBox.style.display = "block";
   document.body.append(textBox);
   const button = document.createElement("button");
   button.addEventListener("click", () => {
     const text = textBox.value;
-    connections.forEach((c) => c.open && c.send(JSON.stringify(["message", text])));
+    connections.forEach(
+      (c) => c.open && c.send(JSON.stringify(["message", text]))
+    );
     textBox.textContent = "";
-    onMessage("", text);
+    onMessage(ownPeerID, text);
   });
   button.textContent = "送信";
   document.body.append(button);
@@ -368,6 +384,7 @@ async function getOwnKeyPair(): Promise<[string, CryptoKey, CryptoKey]> {
 async function main() {
   const own = await createPeer("77157c8d-8852-4dd0-b465-10f57625ffc7");
   const [publicKeyJson, publicKey, privateKey] = await getOwnKeyPair();
+  setSelfConnection(publicKeyJson, own.id);
   if (hasToId()) {
     const other = await connect(own, getToId(), publicKeyJson, privateKey);
     if (!other) {
@@ -378,7 +395,7 @@ async function main() {
     setIdLink(own);
   }
   listenConnection(own, publicKeyJson, privateKey);
-  setMessageInputBox();
+  setMessageInputBox(own.id);
 }
 
 main();
