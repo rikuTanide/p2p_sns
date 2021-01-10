@@ -75,7 +75,7 @@ function connect(
               for (const memberID of memberPeerIDs)
                 connect(own, memberID, ownPublicKeyJson, ownPrivateKey);
             } else {
-              onMessage(other.remoteId, data);
+              onMessage(other.remoteId, data[1]);
             }
             return;
           }
@@ -191,15 +191,14 @@ async function onConnected(other: DataConnection, authRequest: AuthRequest) {
   connectionUsers.set(other.remoteId, connectionUser);
 }
 
-function onMessage(remoteId: string, message: any) {
-  const [method, body] = JSON.parse(message) as [string, string];
+function onMessage(remoteId: string, message: string) {
   const div = document.createElement("div");
   const dl = document.createElement("dl");
   const dt = document.createElement("dt");
   const dd = document.createElement("dd");
 
   dt.textContent = connectionUsers.get(remoteId)?.userHash.slice(0, 5) || "";
-  dd.textContent = body;
+  dd.textContent = message;
 
   dl.append(dt);
   dl.append(dd);
@@ -243,7 +242,7 @@ function listenConnection(
             return;
           }
           case "authorized": {
-            onMessage(other.remoteId, data);
+            onMessage(other.remoteId, data[1]);
             return;
           }
           default: {
@@ -263,6 +262,8 @@ function setMessageInputBox() {
   button.addEventListener("click", () => {
     const text = textBox.value;
     connections.forEach((c) => c.open && c.send(JSON.stringify(["message", text])));
+    textBox.textContent = "";
+    onMessage("", text);
   });
   button.textContent = "送信";
   document.body.append(button);
