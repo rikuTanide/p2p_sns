@@ -84,8 +84,31 @@ function setAlert(data: any) {
   document.body.append(div);
 }
 
+function stringToArrayBuffer(src: string): ArrayBuffer {
+  const array = new Uint16Array(src.split("").map((c) => c.charCodeAt(0)));
+  return array.buffer;
+}
+
+async function createAuthRequest(
+  connectionID: string,
+  ownPublicKeyJson: string,
+  ownPrivateKey: CryptoKey
+): Promise<string> {
+  const payload = connectionID + ownPublicKeyJson;
+  const encMessage = await window.crypto.subtle.encrypt(
+    {
+      name: "RSA-OAEP",
+    },
+    ownPrivateKey,
+    stringToArrayBuffer(payload)
+  );
+  // @ts-ignore
+  return btoa(String.fromCharCode.apply(null, encMessage));
+}
+
 function listenConnection(
   peer: Peer,
+  ownPublicKeyJson: string,
   ownPublicKey: CryptoKey,
   ownPrivateKey: CryptoKey
 ) {
@@ -97,7 +120,9 @@ function listenConnection(
   peer.on("connection", async (other) => {
     let status: Status = "connected";
     checkedRemoteIDs.add(other.remoteId);
-    other.send(await createAuthRequest(other.id, ownPublicKey, ownPrivateKey));
+    other.send(
+      await createAuthRequest(other.id, ownPublicKeyJson, ownPrivateKey)
+    );
     status = "wait-auth-request";
     other.on("data", async (data: any) => {
       switch (status) {
