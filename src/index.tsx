@@ -95,21 +95,71 @@ async function createAuthRequest(
   ownPrivateKey: CryptoKey
 ): Promise<string> {
   const payload = connectionID + ownPublicKeyJson;
+  // const encDigest = await window.crypto.subtle.digest(
+  //   "SHA-256",
+  //   stringToArrayBuffer(payload)
+  // );
   const encMessage = await window.crypto.subtle.encrypt(
     {
       name: "RSA-OAEP",
     },
     ownPrivateKey,
+    // encDigest
     stringToArrayBuffer(payload)
   );
   // @ts-ignore
-  return btoa(String.fromCharCode.apply(null, encMessage));
+  const sign = btoa(String.fromCharCode.apply(null, encMessage));
+  return JSON.stringify([connectionID, ownPublicKeyJson, sign]);
+}
+
+interface AuthRequest {
+  connectionID: string;
+  otherPublicKey: string;
+  sign: ArrayBuffer;
+}
+
+function parseAuthRequest(data: any): AuthRequest {
+  const list = JSON.parse(data as string) as [string, string, string];
+  const [connectionID, otherPublicKey, signBase64] = list;
+  const sign = base64ToArrayBuffer(signBase64);
+  return {
+    connectionID: connectionID,
+    otherPublicKey: otherPublicKey,
+    sign: sign,
+  };
+}
+
+function bufferToString(buf: ArrayBuffer) {
+  // @ts-ignore
+  return String.fromCharCode.apply("", new Uint16Array(buf));
+}
+
+async function decrypt(payload: ArrayBuffer, key: CryptoKey): Promise<string> {
+  const plain = await window.crypto.subtle.decrypt(
+    {
+      name: "RSA-OAEP",
+    },
+    key,
+    payload
+  );
+  return bufferToString(plain);
+}
+
+async function validateAuthRequest(
+  authRequest: AuthRequest,
+  id: string
+): Promise<boolean> {
+  if (id != authRequest.connectionID) return false;
+  const truthPayload = authRequest.connectionID + authRequest.otherPublicKey;
+  const pjwk = JSON.parse(authRequest.otherPublicKey) as JsonWebKey;
+  const publicKey = await importKey(pjwk);
+  const claimPayload = await decrypt(authRequest.sign, publicKey);
+  return truthPayload == claimPayload;
 }
 
 function listenConnection(
   peer: Peer,
   ownPublicKeyJson: string,
-  ownPublicKey: CryptoKey,
   ownPrivateKey: CryptoKey
 ) {
   type Status =
@@ -276,7 +326,7 @@ async function main() {
   } else {
     setIdLink(own);
   }
-  listenConnection(own, publicKey, privateKey);
+  listenConnection(own, publicKeyBase64, privateKey);
   setMessageInputBox();
 }
 
