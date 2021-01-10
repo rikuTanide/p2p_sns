@@ -68,7 +68,7 @@ function connect(
             return;
           }
           case "authorized": {
-            const [method, ...payload] = data;
+            const [method, ...payload] = JSON.parse(data);
             if (method === "member-peer-ids") {
               const memberPeerIDs = payload[0] as string[];
               for (const memberID of memberPeerIDs)
@@ -121,7 +121,7 @@ async function createAuthRequest(
     stringToArrayBuffer(payload)
   );
   // @ts-ignore
-  const sign = btoa(String.fromCharCode(...new Uint8Array(encMessage)));
+  const sign = bufferToString(encMessage);
   console.log(sign);
   return JSON.stringify([connectionID, ownPublicKeyJson, sign]);
 }
@@ -145,7 +145,7 @@ function parseAuthRequest(data: any): AuthRequest {
 
 function bufferToString(buf: ArrayBuffer) {
   // @ts-ignore
-  return String.fromCharCode.apply("", new Uint16Array(buf));
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
 }
 
 async function validateAuthRequest(
@@ -193,13 +193,14 @@ async function onConnected(other: DataConnection, authRequest: AuthRequest) {
 }
 
 function onMessage(remoteId: string, message: any) {
+  const [method, body] = JSON.parse(message) as [string, string];
   const div = document.createElement("div");
   const dl = document.createElement("dl");
   const dt = document.createElement("dt");
   const dd = document.createElement("dd");
 
   dt.textContent = connectionUsers.get(remoteId)?.userHash.slice(0, 5) || "";
-  dd.textContent = message.toString();
+  dd.textContent = body;
 
   dl.append(dt);
   dl.append(dd);
@@ -262,7 +263,7 @@ function setMessageInputBox() {
   const button = document.createElement("button");
   button.addEventListener("click", () => {
     const text = textBox.value;
-    connections.forEach((c) => c.open && c.send(text));
+    connections.forEach((c) => c.open && c.send(JSON.stringify(["message", text])));
   });
   button.textContent = "送信";
   document.body.append(button);
@@ -373,7 +374,6 @@ async function main() {
       console.error("諦め");
       return;
     }
-    connections.push(other);
   } else {
     setIdLink(own);
   }
