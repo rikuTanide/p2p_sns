@@ -3,8 +3,22 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import Peer, { DataConnection } from "skyway-js";
 
+interface ConnectionUser {
+  peerID: string;
+  userHash: string;
+}
+
+interface User {
+  userHash: string;
+}
+
 const checkedRemoteIDs: Set<string> = new Set<string>();
 const connections: DataConnection[] = [];
+const connectionUsers: Map<string, ConnectionUser> = new Map<
+  string,
+  ConnectionUser
+>(); // peerID, ConnectionUser
+const users: Map<string, User> = new Map<string, User>(); // hash, user
 
 function hasToId(): boolean {
   const url = new URL(window.location.href);
@@ -19,7 +33,7 @@ function getToId(): string {
 function connect(
   own: Peer,
   toId: string,
-  ownPublicKey: CryptoKey,
+  ownPublicKeyJson: string,
   ownPrivateKey: CryptoKey
 ): Promise<DataConnection | undefined> {
   return new Promise<DataConnection | undefined>((solve) => {
@@ -47,10 +61,9 @@ function connect(
               return;
             }
             status = "authorized";
-            connections.push(other);
-            onConnected(authRequest);
+            onConnected(other, authRequest);
             other.send(
-              await createAuthRequest(other.id, ownPublicKey, ownPrivateKey)
+              await createAuthRequest(other.id, ownPublicKeyJson, ownPrivateKey)
             );
             return;
           }
@@ -59,7 +72,7 @@ function connect(
             if (method === "member-peer-ids") {
               const memberPeerIDs = payload[0] as string[];
               for (const memberID of memberPeerIDs)
-                connect(own, memberID, ownPublicKey, ownPrivateKey);
+                connect(own, memberID, ownPublicKeyJson, ownPrivateKey);
             } else {
               onMessage(other.remoteId, data);
             }
@@ -99,16 +112,17 @@ async function createAuthRequest(
   //   "SHA-256",
   //   stringToArrayBuffer(payload)
   // );
-  const encMessage = await window.crypto.subtle.encrypt(
+  const encMessage = await window.crypto.subtle.sign(
     {
-      name: "RSA-OAEP",
+      name: "RSASSA-PKCS1-v1_5",
     },
     ownPrivateKey,
     // encDigest
     stringToArrayBuffer(payload)
   );
   // @ts-ignore
-  const sign = btoa(String.fromCharCode.apply(null, encMessage));
+  const sign = btoa(String.fromCharCode(...new Uint8Array(encMessage)));
+  console.log(sign);
   return JSON.stringify([connectionID, ownPublicKeyJson, sign]);
 }
 
@@ -134,27 +148,63 @@ function bufferToString(buf: ArrayBuffer) {
   return String.fromCharCode.apply("", new Uint16Array(buf));
 }
 
-async function decrypt(payload: ArrayBuffer, key: CryptoKey): Promise<string> {
-  const plain = await window.crypto.subtle.decrypt(
-    {
-      name: "RSA-OAEP",
-    },
-    key,
-    payload
-  );
-  return bufferToString(plain);
-}
-
 async function validateAuthRequest(
   authRequest: AuthRequest,
   id: string
 ): Promise<boolean> {
   if (id != authRequest.connectionID) return false;
   const truthPayload = authRequest.connectionID + authRequest.otherPublicKey;
+  console.log(truthPayload);
   const pjwk = JSON.parse(authRequest.otherPublicKey) as JsonWebKey;
   const publicKey = await importKey(pjwk);
-  const claimPayload = await decrypt(authRequest.sign, publicKey);
-  return truthPayload == claimPayload;
+
+  const ok = await window.crypto.subtle.verify(
+    {
+      name: "RSASSA-PKCS1-v1_5",
+    },
+    publicKey,
+    authRequest.sign,
+    stringToArrayBuffer(truthPayload)
+  );
+
+  return ok;
+}
+
+function createMembersMessage(): string {
+  return JSON.stringify(["member-peer-ids", connections.map((c) => c.id)]);
+}
+
+async function hash(payload: string): Promise<string> {
+  const payloadAb = stringToArrayBuffer(payload);
+  const digest = await window.crypto.subtle.digest("sha-256", payloadAb);
+  return bufferToString(digest);
+}
+
+async function onConnected(other: DataConnection, authRequest: AuthRequest) {
+  connections.push(other);
+  const userHash = await hash(authRequest.otherPublicKey);
+  const user: User = { userHash: userHash };
+  users.set(userHash, user);
+  const connectionUser: ConnectionUser = {
+    peerID: other.remoteId,
+    userHash: userHash,
+  };
+  connectionUsers.set(other.remoteId, connectionUser);
+}
+
+function onMessage(remoteId: string, message: any) {
+  const div = document.createElement("div");
+  const dl = document.createElement("dl");
+  const dt = document.createElement("dt");
+  const dd = document.createElement("dd");
+
+  dt.textContent = connectionUsers.get(remoteId)?.userHash.slice(0, 5) || "";
+  dd.textContent = message.toString();
+
+  dl.append(dt);
+  dl.append(dd);
+  div.append(dl);
+  document.body.append(div);
 }
 
 function listenConnection(
@@ -169,37 +219,38 @@ function listenConnection(
     | "authorized";
   peer.on("connection", async (other) => {
     let status: Status = "connected";
-    checkedRemoteIDs.add(other.remoteId);
-    other.send(
-      await createAuthRequest(other.id, ownPublicKeyJson, ownPrivateKey)
-    );
-    status = "wait-auth-request";
-    other.on("data", async (data: any) => {
-      switch (status) {
-        case "wait-auth-request": {
-          status = "processing-auth-request";
-          const authRequest = parseAuthRequest(data);
-          const ok = await validateAuthRequest(authRequest, other.id);
-          if (!ok) {
-            console.error("つないできた端末のAuth RequestのValidationが失敗");
-            other.close();
+    other.on("open", async () => {
+      checkedRemoteIDs.add(other.remoteId);
+      other.send(
+        await createAuthRequest(other.id, ownPublicKeyJson, ownPrivateKey)
+      );
+      status = "wait-auth-request";
+      other.on("data", async (data: any) => {
+        switch (status) {
+          case "wait-auth-request": {
+            status = "processing-auth-request";
+            const authRequest = parseAuthRequest(data);
+            const ok = await validateAuthRequest(authRequest, other.id);
+            if (!ok) {
+              console.error("つないできた端末のAuth RequestのValidationが失敗");
+              other.close();
+              return;
+            } else {
+              status = "authorized";
+              other.send(createMembersMessage());
+              onConnected(other, authRequest);
+            }
             return;
-          } else {
-            status = "authorized";
-            connections.push(other);
-            other.send(createMembersMessage());
-            onConnected(authRequest);
           }
-          return;
+          case "authorized": {
+            onMessage(other.remoteId, data);
+            return;
+          }
+          default: {
+            return;
+          }
         }
-        case "authorized": {
-          onMessage(other.remoteId, data);
-          return;
-        }
-        default: {
-          return;
-        }
-      }
+      });
     });
   });
 }
@@ -250,15 +301,15 @@ async function importKey(keyJson: JsonWebKey): Promise<CryptoKey> {
     keyJson,
     {
       //these are the algorithm options
-      name: "RSA-OAEP",
+      name: "RSASSA-PKCS1-v1_5",
       hash: { name: "SHA-256" }, //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
     },
-    false, //whether the key is extractable (i.e. can be used in exportKey)
-    ["encrypt"]
+    true, //whether the key is extractable (i.e. can be used in exportKey)
+    keyJson.key_ops as ["encrypt"] | ["decrypt"]
   );
 }
 
-async function keysFromBase64(
+async function keysFromJson(
   publicKeyJson: string,
   privateKeyJson: string
 ): Promise<[string, CryptoKey, CryptoKey]> {
@@ -280,13 +331,13 @@ async function keyToJson(key: CryptoKey): Promise<string> {
 async function generateKeys(): Promise<[string, string, CryptoKey, CryptoKey]> {
   let keyPair = await window.crypto.subtle.generateKey(
     {
-      name: "RSA-OAEP",
+      name: "RSASSA-PKCS1-v1_5",
       modulusLength: 2048, //can be 1024, 2048, or 4096
       publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
       hash: { name: "SHA-256" }, //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
     },
-    false, //whether the key is extractable (i.e. can be used in exportKey)
-    ["encrypt", "decrypt"] //must be ["encrypt", "decrypt"] or ["wrapKey", "unwrapKey"]
+    true, //whether the key is extractable (i.e. can be used in exportKey)
+    ["sign", "verify"] //must be ["encrypt", "decrypt"] or ["wrapKey", "unwrapKey"]
   );
 
   const publicKeyJson = await keyToJson(keyPair.publicKey);
@@ -299,7 +350,7 @@ async function getOwnKeyPair(): Promise<[string, CryptoKey, CryptoKey]> {
   const privateKeyJson = window.localStorage.getItem("private-key");
 
   if (publicKeyJson && privateKeyJson) {
-    return keysFromBase64(publicKeyJson, privateKeyJson);
+    return keysFromJson(publicKeyJson, privateKeyJson);
   } else {
     const [
       publicKeyBase64,
@@ -315,9 +366,9 @@ async function getOwnKeyPair(): Promise<[string, CryptoKey, CryptoKey]> {
 
 async function main() {
   const own = await createPeer("77157c8d-8852-4dd0-b465-10f57625ffc7");
-  const [publicKeyBase64, publicKey, privateKey] = await getOwnKeyPair();
+  const [publicKeyJson, publicKey, privateKey] = await getOwnKeyPair();
   if (hasToId()) {
-    const other = await connect(own, getToId(), publicKey, privateKey);
+    const other = await connect(own, getToId(), publicKeyJson, privateKey);
     if (!other) {
       console.error("諦め");
       return;
@@ -326,7 +377,7 @@ async function main() {
   } else {
     setIdLink(own);
   }
-  listenConnection(own, publicKeyBase64, privateKey);
+  listenConnection(own, publicKeyJson, privateKey);
   setMessageInputBox();
 }
 
