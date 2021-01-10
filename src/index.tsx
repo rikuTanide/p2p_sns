@@ -16,7 +16,7 @@ function getToId(): string {
     return url.searchParams.get("to")!;
 }
 
-function connect(own: Peer, toId: string, ownPublicKey: JsonWebKey, ownPrivateKey: JsonWebKey): Promise<DataConnection | undefined> {
+function connect(own: Peer, toId: string, ownPublicKey: CryptoKey, ownPrivateKey: CryptoKey): Promise<DataConnection | undefined> {
     return new Promise<DataConnection | undefined>(solve => {
         // authorizedの時のメッセージには、メンバー情報とメッセージの二種類がある
         type Status = "connecting" | "processing-auth-request" | "authorized";
@@ -76,7 +76,7 @@ function setAlert(data: any) {
     document.body.append(div);
 }
 
-function listenConnection(peer: Peer, ownPublicKey: JsonWebKey, ownPrivateKey: JsonWebKey) {
+function listenConnection(peer: Peer, ownPublicKey: CryptoKey, ownPrivateKey: CryptoKey) {
     type Status = "connected" | "wait-auth-request" | "processing-auth-request" | "authorized";
     peer.on('connection', async other => {
         let status: Status = "connected";
@@ -143,16 +143,90 @@ function createPeer(key: string): Promise<Peer> {
     });
 }
 
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+    var binary_string = window.atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+async function importKey(keyJson: JsonWebKey): Promise<CryptoKey> {
+    return window.crypto.subtle.importKey(
+        "jwk",
+        keyJson,
+        {   //these are the algorithm options
+            name: "RSA-OAEP",
+            hash: {name: "SHA-256"}, //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
+        },
+        false, //whether the key is extractable (i.e. can be used in exportKey)
+        ["encrypt"]
+    );
+}
+
+async function keysFromBase64(publicKeyJson: string, privateKeyJson: string): Promise<[string, CryptoKey, CryptoKey]> {
+    const publicKeyJwk = JSON.parse(publicKeyJson) as JsonWebKey;
+    const publicKey = await importKey(publicKeyJwk);
+    const privateKeyJwk = JSON.parse(privateKeyJson) as JsonWebKey;
+    const privateKey = await importKey(privateKeyJwk);
+    return [publicKeyJson, publicKey, privateKey];
+}
+
+async function keyToJson(key: CryptoKey): Promise<string> {
+    const jwk = await window.crypto.subtle.exportKey(
+        "jwk", //can be "jwk" (public or private), "spki" (public only), or "pkcs8" (private only)
+        key //can be a publicKey or privateKey, as long as extractable was true
+    );
+    return JSON.stringify(jwk);
+}
+
+async function generateKeys(): Promise<[string , string , CryptoKey, CryptoKey]> {
+    let keyPair = await window.crypto.subtle.generateKey(
+        {
+            name: "RSA-OAEP",
+            modulusLength: 2048, //can be 1024, 2048, or 4096
+            publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+            hash: {name: "SHA-256"}, //can be "SHA-1", "SHA-256", "SHA-384", or "SHA-512"
+        },
+        false, //whether the key is extractable (i.e. can be used in exportKey)
+        ["encrypt", "decrypt"] //must be ["encrypt", "decrypt"] or ["wrapKey", "unwrapKey"]
+    );
+
+    const publicKeyJson = await keyToJson(keyPair.publicKey);
+    const privateKeyJson = await keyToJson(keyPair.privateKey);
+    return [publicKeyJson, privateKeyJson, keyPair.publicKey, keyPair.privateKey];
+}
+
+async function getOwnKeyPair(): Promise<[string, CryptoKey, CryptoKey]> {
+    const publicKeyJson = window.localStorage.getItem("public-key");
+    const privateKeyJson = window.localStorage.getItem("private-key");
+
+    if (publicKeyJson && privateKeyJson) {
+        return keysFromBase64(publicKeyJson, privateKeyJson)
+    } else {
+        const [publicKeyBase64, privateKeyBase64, publicKey, privateKey] = await generateKeys();
+        window.localStorage.setItem("public-key", publicKeyBase64);
+        window.localStorage.setItem("private-key", privateKeyBase64);
+        return [publicKeyBase64, publicKey, publicKey];
+    }
+}
+
 async function main() {
     const own = await createPeer("77157c8d-8852-4dd0-b465-10f57625ffc7");
-    const ownKeyPair = await getOwnkeyPair();
+    const [publicKeyBase64, publicKey, privateKey] = await getOwnKeyPair();
     if (hasToId()) {
-        const other = await connect(own, getToId());
+        const other = await connect(own, getToId(), publicKey, privateKey);
+        if (!other) {
+            console.error("諦め");
+            return;
+        }
         connections.push(other);
     } else {
         setIdLink(own);
     }
-    listenConnection(own)
+    listenConnection(own, publicKey, privateKey)
     setMessageInputBox();
 }
 
