@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
-import Peer, { DataConnection } from "skyway-js";
 
 interface ConnectionUser {
   peerID: string;
