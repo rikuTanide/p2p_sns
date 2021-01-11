@@ -10,6 +10,7 @@ interface ConnectionUser {
 
 interface User {
   userHash: string;
+  name: string;
 }
 
 const checkedRemoteIDs: Set<string> = new Set<string>();
@@ -34,7 +35,8 @@ function connect(
   own: Peer,
   toId: string,
   ownPublicKeyJson: string,
-  ownPrivateKey: CryptoKey
+  ownPrivateKey: CryptoKey,
+  myName: string
 ): Promise<DataConnection | undefined> {
   return new Promise<DataConnection | undefined>((solve) => {
     // authorizedの時のメッセージには、メンバー情報とメッセージの二種類がある
@@ -63,7 +65,12 @@ function connect(
             status = "authorized";
             onConnected(other, authRequest);
             other.send(
-              await createAuthRequest(other.id, ownPublicKeyJson, ownPrivateKey)
+              await createAuthRequest(
+                other.id,
+                ownPublicKeyJson,
+                ownPrivateKey,
+                myName
+              )
             );
             return;
           }
@@ -71,9 +78,8 @@ function connect(
             const [method, ...payload] = JSON.parse(data);
             if (method === "member-peer-ids") {
               const memberPeerIDs = payload[0] as string[];
-              console.log(memberPeerIDs);
               for (const memberID of memberPeerIDs)
-                connect(own, memberID, ownPublicKeyJson, ownPrivateKey);
+                connect(own, memberID, ownPublicKeyJson, ownPrivateKey, myName);
             } else {
               onMessage(other.remoteId, payload[0]);
             }
@@ -106,7 +112,8 @@ function stringToArrayBuffer(src: string): ArrayBuffer {
 async function createAuthRequest(
   connectionID: string,
   ownPublicKeyJson: string,
-  ownPrivateKey: CryptoKey
+  ownPrivateKey: CryptoKey,
+  myName: string
 ): Promise<string> {
   const payload = connectionID + ownPublicKeyJson;
   // const encDigest = await window.crypto.subtle.digest(
@@ -123,23 +130,25 @@ async function createAuthRequest(
   );
   // @ts-ignore
   const sign = bufferToString(encMessage);
-  return JSON.stringify([connectionID, ownPublicKeyJson, sign]);
+  return JSON.stringify([connectionID, ownPublicKeyJson, sign, myName]);
 }
 
 interface AuthRequest {
   connectionID: string;
   otherPublicKey: string;
   sign: ArrayBuffer;
+  name: string;
 }
 
 function parseAuthRequest(data: any): AuthRequest {
-  const list = JSON.parse(data as string) as [string, string, string];
-  const [connectionID, otherPublicKey, signBase64] = list;
+  const list = JSON.parse(data as string) as [string, string, string, string];
+  const [connectionID, otherPublicKey, signBase64, name] = list;
   const sign = base64ToArrayBuffer(signBase64);
   return {
     connectionID: connectionID,
     otherPublicKey: otherPublicKey,
     sign: sign,
+    name: name,
   };
 }
 
@@ -182,9 +191,13 @@ async function hash(payload: string): Promise<string> {
   return bufferToString(digest);
 }
 
-async function setSelfConnection(publicKeyJson: string, ownPeerID: string) {
+async function setSelfConnection(
+  publicKeyJson: string,
+  ownPeerID: string,
+  name: string
+) {
   const userHash = await hash(publicKeyJson);
-  const user: User = { userHash: userHash };
+  const user: User = { userHash: userHash, name: name };
   users.set(userHash, user);
   const connectionUser: ConnectionUser = {
     peerID: ownPeerID,
@@ -196,7 +209,7 @@ async function setSelfConnection(publicKeyJson: string, ownPeerID: string) {
 async function onConnected(other: DataConnection, authRequest: AuthRequest) {
   connections.push(other);
   const userHash = await hash(authRequest.otherPublicKey);
-  const user: User = { userHash: userHash };
+  const user: User = { userHash: userHash, name: authRequest.name };
   users.set(userHash, user);
   const connectionUser: ConnectionUser = {
     peerID: other.remoteId,
@@ -210,8 +223,11 @@ function onMessage(remoteId: string, message: string) {
   const dl = document.createElement("dl");
   const dt = document.createElement("dt");
   const dd = document.createElement("dd");
-
-  dt.textContent = connectionUsers.get(remoteId)?.userHash.slice(0, 5) || "";
+  const hash = connectionUsers.get(remoteId)?.userHash || "";
+  const hashSlice = hash.slice(0, 5) || "";
+  const name = users.get(hash)?.name || "";
+  const nameLabel = `${name}#${hashSlice}`;
+  dt.textContent = nameLabel;
   dd.textContent = message;
 
   dl.append(dt);
@@ -223,7 +239,8 @@ function onMessage(remoteId: string, message: string) {
 function listenConnection(
   peer: Peer,
   ownPublicKeyJson: string,
-  ownPrivateKey: CryptoKey
+  ownPrivateKey: CryptoKey,
+  myName: string
 ) {
   type Status =
     | "connected"
@@ -235,7 +252,12 @@ function listenConnection(
     other.on("open", async () => {
       checkedRemoteIDs.add(other.remoteId);
       other.send(
-        await createAuthRequest(other.id, ownPublicKeyJson, ownPrivateKey)
+        await createAuthRequest(
+          other.id,
+          ownPublicKeyJson,
+          ownPrivateKey,
+          myName
+        )
       );
       status = "wait-auth-request";
       other.on("data", async (data: any) => {
@@ -381,12 +403,40 @@ async function getOwnKeyPair(): Promise<[string, CryptoKey, CryptoKey]> {
   }
 }
 
+function setUserNameButton() {
+  const button = document.createElement("button");
+  button.textContent = "ユーザー名";
+  button.addEventListener("click", () => {
+    const userName = window.prompt(
+      "ユーザー名",
+      window.localStorage.getItem("user-name") || ""
+    );
+    if (userName) window.localStorage.setItem("user-name", userName);
+  });
+  document.body.append(button);
+}
+
+function showName(name: string) {
+  const div = document.createElement("div");
+  div.textContent = name;
+  document.body.append(div);
+}
+
 async function main() {
   const own = await createPeer("77157c8d-8852-4dd0-b465-10f57625ffc7");
+  const myName = window.localStorage.getItem("user-name") || "";
+  showName(myName);
+  setUserNameButton();
   const [publicKeyJson, publicKey, privateKey] = await getOwnKeyPair();
-  setSelfConnection(publicKeyJson, own.id);
+  setSelfConnection(publicKeyJson, own.id, myName);
   if (hasToId()) {
-    const other = await connect(own, getToId(), publicKeyJson, privateKey);
+    const other = await connect(
+      own,
+      getToId(),
+      publicKeyJson,
+      privateKey,
+      myName
+    );
     if (!other) {
       console.error("諦め");
       return;
@@ -394,7 +444,7 @@ async function main() {
   } else {
     setIdLink(own);
   }
-  listenConnection(own, publicKeyJson, privateKey);
+  listenConnection(own, publicKeyJson, privateKey, myName);
   setMessageInputBox(own.id);
 }
 
