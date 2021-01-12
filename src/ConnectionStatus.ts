@@ -1,5 +1,6 @@
 import Peer, { DataConnection } from "skyway-js";
 import { Subject } from "rxjs";
+import { ConnectionBundle } from "./ConnectionBundle";
 
 type ComingConnectionStatus =
   | "connected"
@@ -13,7 +14,7 @@ type GoingConnectionStatus =
   | "authorized";
 
 interface GoingConnection {
-  status: GoingConnection;
+  status: GoingConnectionStatus;
   remoteID: string;
   connectionID: string;
 }
@@ -150,26 +151,19 @@ export class P2pManager {
   public sendComment(remoteIDs: string[], data: string) {}
 }
 
-export class ConnectionBundle {
-  public readonly onConnectSuccess = new Subject<{
-    connectionID: string;
-    remoteID: string;
-  }>();
-  public readonly onConnectComing = new Subject<{
-    connectionID: string;
-    remoteID: string;
-  }>();
-  public readonly onMessage = new Subject<{
-    connectionID: string;
-    data: any[];
-  }>();
-  public readonly onClose = new Subject<{ connectionID: string }>();
+const skyWayKey = "77157c8d-8852-4dd0-b465-10f57625ffc7";
 
-  constructor(private peer: Peer) {}
+export async function setUp() {
+  const ps = new PersistentService();
+  const name = await ps.name();
+  const ownKeyManager = await OwnKeyManager.get(ps);
+  const cb = await ConnectionBundle.open(skyWayKey);
+  const p2p = new P2pManager(ownKeyManager);
 
-  public connect(remoteID: string) {}
+  const u = new UrlParser();
 
-  public send(connectionID: string, data: any[]) {}
+  if (u.hasToId()) {
+    p2p.connect(u.getToId(), name);
+  }
 
-  public close(connectionID: string) {}
 }
