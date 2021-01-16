@@ -1,26 +1,35 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { ChangeEvent } from "react";
+import logo from "./logo.svg";
+import "./App.css";
+import { useSns } from "./ConnectionStatus";
+import { ConnectionBundler } from "./ConnectionBundler";
+import { P2pController } from "./P2pController";
+import { AuthService } from "./AuthService";
 
-function App() {
+export const App: React.FunctionComponent<{
+  cb: ConnectionBundler;
+  p2pController: P2pController;
+  auth: AuthService;
+}> = (props) => {
+  const [state, handler, texts] = useSns(
+    props.cb,
+    props.p2pController,
+    props.auth
+  );
+
+  const roomID = state.roomID;
+  const text = texts.find((t) => t.roomID == roomID)?.text || "";
+
+  function onTextChange(e: ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    handler.onTextInput(roomID, value);
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <input type="text" value={text} onChange={onTextChange} />
     </div>
   );
-}
+};
 
 export default App;
