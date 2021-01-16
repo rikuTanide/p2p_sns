@@ -1,3 +1,5 @@
+import { PersistentService } from "./PersistentService";
+
 export class AuthService {
   public constructor(
     public ownPublicKeyJson: string,
@@ -53,8 +55,8 @@ export class AuthService {
     const array = new Uint8Array(10);
     window.crypto.getRandomValues(array);
     let str = "";
-    for(const i in array ) {
-      const s = array[i].toString(16)
+    for (const i in array) {
+      const s = array[i].toString(16);
       str += s;
     }
     return str;
@@ -101,9 +103,10 @@ function bufferToString(buf: ArrayBuffer) {
   return btoa(String.fromCharCode(...new Uint8Array(buf)));
 }
 
-export async function getOwnKeyPair(): Promise<[string, CryptoKey, CryptoKey]> {
-  const publicKeyJson = window.localStorage.getItem("public-key");
-  const privateKeyJson = window.localStorage.getItem("private-key");
+export async function getOwnKeyPair(
+  persistentService: PersistentService
+): Promise<[string, CryptoKey, CryptoKey]> {
+  const [publicKeyJson, privateKeyJson] = persistentService.getKeyPair();
 
   if (publicKeyJson && privateKeyJson) {
     return keysFromJson(publicKeyJson, privateKeyJson);
@@ -114,8 +117,7 @@ export async function getOwnKeyPair(): Promise<[string, CryptoKey, CryptoKey]> {
       publicKey,
       privateKey,
     ] = await generateKeys();
-    window.localStorage.setItem("public-key", publicKeyBase64);
-    window.localStorage.setItem("private-key", privateKeyBase64);
+    persistentService.setKeyPair(publicKeyBase64, privateKeyBase64);
     return [publicKeyBase64, publicKey, publicKey];
   }
 }

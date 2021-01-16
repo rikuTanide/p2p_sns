@@ -32,7 +32,6 @@ export interface User {
   introduce: string;
   trust: boolean;
   own: boolean;
-  block: boolean;
   visible: boolean;
 }
 export type ComingConnectionStatus =

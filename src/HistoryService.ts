@@ -13,4 +13,8 @@ export class HistoryService {
     p.set("peer", peerID);
     this.history.push("?" + p.toString());
   }
+
+  public getPeers(): string[] {
+    return new URLSearchParams(this.history.location.search).getAll("peer");
+  }
 }
