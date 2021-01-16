@@ -215,8 +215,6 @@ class DelegateGoingConnection {
 
   private isConnect(remoteID: string): boolean {
     const ah = this.p2p.state.connectionAuthStatus;
-    this.p2p.state.connectionAuthStatus;
-    this.p2p.state.connectionAuthStatus;
     if (ah.validatedConnections.find((c) => c.remoteID == remoteID))
       return true;
     if (ah.comingConnections.find((c) => c.remoteID == remoteID)) return true;

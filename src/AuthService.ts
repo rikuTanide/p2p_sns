@@ -50,10 +50,14 @@ export class AuthService {
   }
 
   public static random(): string {
-    const array = new Uint8Array(20);
+    const array = new Uint8Array(10);
     window.crypto.getRandomValues(array);
-    // @ts-ignore
-    return btoa(String.fromCharCode(...array));
+    let str = "";
+    for(const i in array ) {
+      const s = array[i].toString(16)
+      str += s;
+    }
+    return str;
   }
 }
 
