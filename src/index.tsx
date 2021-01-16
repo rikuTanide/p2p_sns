@@ -8,6 +8,7 @@ import { defaultState, State } from "./ConnectionStatus";
 import { HistoryService } from "./HistoryService";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { P2pController } from "./P2pController";
+import { createHashHistory } from "history";
 
 function createPeer(key: string): Promise<Peer> {
   const own = new Peer({ key: key });
@@ -18,15 +19,26 @@ function createPeer(key: string): Promise<Peer> {
   });
 }
 
+function createRoom(): string {
+  return AuthService.random();
+}
+
 async function main() {
   const peer = await createPeer("77157c8d-8852-4dd0-b465-10f57625ffc7");
   const [publicKeyJson, publicKey, privateKey] = await getOwnKeyPair();
-  const historyService = new HistoryService();
+  const history = createHashHistory();
+  const historyService = new HistoryService(history);
+
+  if (!historyService.getRoomID()) {
+    const roomID = createRoom();
+    historyService.setRoom(roomID, peer.id);
+  }
 
   const initialState: State = {
     ...defaultState,
-    roomID: historyService.getRoomID(),
+    roomID: historyService.getRoomID()!,
   };
+
   const cb = new ConnectionBundler(peer);
   const p2pController = new P2pController(initialState);
   const auth = new AuthService(publicKeyJson, privateKey);

@@ -48,6 +48,13 @@ export class AuthService {
   async digest(data: string): Promise<string> {
     return hash(data);
   }
+
+  public static random(): string {
+    const array = new Uint8Array(20);
+    window.crypto.getRandomValues(array);
+    // @ts-ignore
+    return btoa(String.fromCharCode(...array));
+  }
 }
 
 function stringToArrayBuffer(src: string): ArrayBuffer {
