@@ -116,15 +116,18 @@ export function useSns(
   useEffect(() => {
     p2pController.callback = setState;
     p2pController.state = state;
-    const oos = cb.onOpen.subscribe((o) =>
-      p2pController.onOpen(o.connectionID, o.remoteID, cb, auth)
-    );
-    const ods = cb.onData.subscribe((d) =>
-      p2pController.onData(d.connectionID, d.data, cb, auth)
-    );
-    const ocs = cb.onClose.subscribe((c) =>
-      p2pController.onClose(c.connectionID)
-    );
+    const oos = cb.onOpen.subscribe((o) => {
+      console.log(["open", o]);
+      p2pController.onOpen(o.connectionID, o.remoteID, cb, auth);
+    });
+    const ods = cb.onData.subscribe((d) => {
+      console.log(["data", d]);
+      p2pController.onData(d.connectionID, d.data, cb, auth);
+    });
+    const ocs = cb.onClose.subscribe((c) => {
+      console.log("close", c);
+      p2pController.onClose(c.connectionID);
+    });
 
     return () => {
       oos.unsubscribe();

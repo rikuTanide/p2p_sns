@@ -4,7 +4,7 @@ import "./index.css";
 import Peer from "skyway-js";
 import { AuthService, getOwnKeyPair } from "./AuthService";
 import App from "./App";
-import { defaultState, State, User } from "./ConnectionStatus";
+import { defaultState, State, User } from "./useStatus";
 import { HistoryService } from "./HistoryService";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { P2pController } from "./P2pController";
@@ -24,8 +24,14 @@ function createRoom(): string {
   return AuthService.random();
 }
 
-function createRoomInitialize(ownUser: User): P2pController {
+function createRoomInitialize(
+  ownUser: User,
+  historyService: HistoryService,
+  peerID: string
+): P2pController {
   const roomID = createRoom();
+  // console.log()
+  historyService.setRoom(roomID, peerID);
   const initialState: State = {
     ...defaultState,
     users: [ownUser],
@@ -95,13 +101,8 @@ async function main() {
   );
 
   const p2pController = historyService.getRoomID()
-    ? createRoomInitialize(ownUser)
-    : joinInitialize(ownUser, historyService, cb);
-
-  if (!historyService.getRoomID()) {
-    const roomID = createRoom();
-    historyService.setRoom(roomID, peer.id);
-  }
+    ? joinInitialize(ownUser, historyService, cb)
+    : createRoomInitialize(ownUser, historyService, peer.id);
 
   ReactDOM.render(
     <React.StrictMode>

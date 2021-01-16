@@ -5,9 +5,8 @@ import {
   GoingConnection,
   GoingConnectionStatus,
   State,
-  User,
   ValidatedConnection,
-} from "./ConnectionStatus";
+} from "./useStatus";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { PersistentService } from "./PersistentService";
 import { AuthService } from "./AuthService";

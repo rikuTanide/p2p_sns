@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from "react";
 import logo from "./logo.svg";
 import "./App.css";
-import { useSns } from "./ConnectionStatus";
+import { useSns } from "./useStatus";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { P2pController } from "./P2pController";
 import { AuthService } from "./AuthService";
