@@ -19,18 +19,18 @@ export class ConnectionBundler {
   public constructor(private peer: Peer) {
     peer.on("connection", (con) => {
       this.map.set(con.id, con);
-      this.onOpen.next({
-        connectionID: con.id,
-        remoteID: con.remoteId,
+      con.on('open', () => {
+        this.onOpen.next({
+          connectionID: con.id,
+          remoteID: con.remoteId,
+        });
       });
-
       con.on("data", (data) => {
         this.onData.next({
           connectionID: con.id,
           data: data,
         });
       });
-
       con.on("close", () => {
         this.map.delete(con.id);
         this.onClose.next({
@@ -48,11 +48,17 @@ export class ConnectionBundler {
 
   public connect(remoteID: string) {
     const other = this.peer.connect(remoteID);
-    this.map.set(remoteID, other);
+    this.map.set(other.id, other);
     other.on("open", () => {
       this.onOpen.next({
         connectionID: other.id,
         remoteID: other.remoteId,
+      });
+    });
+    other.on("data", data => {
+      this.onData.next({
+        data: data,
+        connectionID: other.id,
       });
     });
     other.on("close", () => {
@@ -63,6 +69,7 @@ export class ConnectionBundler {
     });
   }
   public send(connectionID: string, data: any) {
+    console.log([!!this.map.get(connectionID), data]);
     this.map.get(connectionID)?.send(data);
   }
   public close(connectionID: string) {

@@ -106,6 +106,8 @@ async function main() {
 
   ReactDOM.render(
     <React.StrictMode>
+      <a href="/">トップ</a>
+      <br />
       <App cb={cb} p2pController={p2pController} auth={auth} />
     </React.StrictMode>,
     document.getElementById("root")
