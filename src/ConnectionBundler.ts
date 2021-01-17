@@ -37,6 +37,12 @@ export class ConnectionBundler {
           connectionID: con.id,
         });
       });
+      con.on('error', e => {
+        console.error(e)
+      });
+    });
+    peer.on('error', e => {
+      console.error(e)
     });
   }
 
@@ -64,6 +70,9 @@ export class ConnectionBundler {
         this.onClose.next({
           connectionID: other.id,
         });
+      });
+      other.on('error', e => {
+        console.error(e)
       });
     });
   }
