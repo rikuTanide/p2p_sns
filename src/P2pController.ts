@@ -1,6 +1,7 @@
 import {
   ComingConnection,
   ComingConnectionStatus,
+  Comment,
   ConnectionAuthStatus,
   GoingConnection,
   GoingConnectionStatus,
@@ -25,6 +26,22 @@ export class P2pController {
   }
 
   public send(roomID: string, text: string, cb: ConnectionBundler) {
+    const digest = this.state.users.find((u) => u.own)!.publicKeyDigest;
+    if (!digest) return;
+    const nextComment: Comment = {
+      publicKeyDigest: digest,
+      roomID: roomID,
+      text: text,
+    };
+    const nextComments: Comment[] = [nextComment, ...this.state.comments];
+    const state: State = {
+      ...this.state,
+      comments: nextComments,
+    };
+
+    this.state = state;
+    this.callback(state);
+
     const memberConnectionIDs = this.roomConnections(roomID).map(
       (c) => c.connectionID
     );

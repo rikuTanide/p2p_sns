@@ -29,10 +29,27 @@ export const App: React.FunctionComponent<{
     handler.onSubmit(roomID);
   }
 
+  const comments = state.comments.filter((c) => c.roomID == roomID);
+
+  const ownDigest = state.users.find((u) => u.own)?.publicKeyDigest;
+  function isOwn(digest: string): boolean {
+    return ownDigest == digest;
+  }
+
   return (
     <div>
       <input type="text" value={text} onChange={onTextChange} />
       <button onClick={onSubmit}>送信</button>
+
+      {comments.map((c, i) => (
+        <div key={i}>
+          <div>
+            {c.publicKeyDigest}
+            {isOwn(c.publicKeyDigest) ? "☑" : ""}
+          </div>
+          {c.text}
+        </div>
+      ))}
     </div>
   );
 };
