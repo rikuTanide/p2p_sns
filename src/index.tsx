@@ -40,6 +40,7 @@ function createRoomInitialize(
       validatedConnections: [],
     },
     roomID: roomID,
+    members: [],
   };
   return new P2pController(initialState);
 }

@@ -41,7 +41,6 @@ export type ComingConnectionStatus =
   | "authorized";
 
 export type GoingConnectionStatus =
-  | "connecting"
   | "connected"
   | "processing-auth-request"
   | "wait-auth-request"
@@ -110,7 +109,7 @@ export function useSns(
   p2pController: P2pController,
   auth: AuthService
 ): [State, Handlers, InputText[]] {
-  const [state, setState] = useState<State>(defaultState);
+  const [state, setState] = useState<State>(p2pController.state);
   const [texts, setTexts] = useState<InputText[]>([]);
 
   useEffect(() => {

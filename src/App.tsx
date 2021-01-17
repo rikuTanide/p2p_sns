@@ -25,9 +25,14 @@ export const App: React.FunctionComponent<{
     handler.onTextInput(roomID, value);
   }
 
+  function onSubmit() {
+    handler.onSubmit(roomID);
+  }
+
   return (
     <div>
       <input type="text" value={text} onChange={onTextChange} />
+      <button onClick={onSubmit}>送信</button>
     </div>
   );
 };

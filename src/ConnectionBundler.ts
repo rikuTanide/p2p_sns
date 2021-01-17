@@ -16,10 +16,10 @@ export interface OnCloseEvent {
 }
 
 export class ConnectionBundler {
-  public constructor(private peer: Peer) {
+  public constructor(public peer: Peer) {
     peer.on("connection", (con) => {
       this.map.set(con.id, con);
-      con.on('open', () => {
+      con.on("open", () => {
         this.onOpen.next({
           connectionID: con.id,
           remoteID: con.remoteId,
@@ -46,25 +46,24 @@ export class ConnectionBundler {
   public onData = new Subject<OnDataEvent>();
   public onClose = new Subject<OnCloseEvent>();
 
-  public connect(remoteID: string) {
-    const other = this.peer.connect(remoteID);
-    this.map.set(other.id, other);
-    other.on("open", () => {
-      this.onOpen.next({
-        connectionID: other.id,
-        remoteID: other.remoteId,
+  public connect(remoteID: string): Promise<string> {
+    return new Promise<string>((solve) => {
+      const other = this.peer.connect(remoteID);
+      this.map.set(other.id, other);
+      other.on("open", () => {
+        solve(other.id);
       });
-    });
-    other.on("data", data => {
-      this.onData.next({
-        data: data,
-        connectionID: other.id,
+      other.on("data", (data) => {
+        this.onData.next({
+          data: data,
+          connectionID: other.id,
+        });
       });
-    });
-    other.on("close", () => {
-      this.map.delete(other.id);
-      this.onClose.next({
-        connectionID: other.id,
+      other.on("close", () => {
+        this.map.delete(other.id);
+        this.onClose.next({
+          connectionID: other.id,
+        });
       });
     });
   }
