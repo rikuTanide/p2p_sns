@@ -17,4 +17,13 @@ export class HistoryService {
   public getPeers(): string[] {
     return new URLSearchParams(this.history.location.search).getAll("peer");
   }
+
+  public setPeers(roomID: string, remoteIDs: string[]) {
+    const params = new URLSearchParams();
+    params.set("room", roomID);
+    for (const remoteID of remoteIDs) {
+      params.append("peer", remoteID);
+    }
+    this.history.push("?" + params.toString());
+  }
 }

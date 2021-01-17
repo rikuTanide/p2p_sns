@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { P2pController } from "./P2pController";
 import { AuthService } from "./AuthService";
+import { HistoryService } from "./HistoryService";
 
 export interface State {
   roomID: string;
@@ -106,7 +107,8 @@ interface Handlers {
 export function useSns(
   cb: ConnectionBundler,
   p2pController: P2pController,
-  auth: AuthService
+  auth: AuthService,
+  history: HistoryService
 ): [State, Handlers, InputText[]] {
   const [state, setState] = useState<State>(p2pController.state);
   const [texts, setTexts] = useState<InputText[]>([]);
@@ -120,7 +122,7 @@ export function useSns(
     });
     const ods = cb.onData.subscribe((d) => {
       console.log(["data", d]);
-      p2pController.onData(d.connectionID, d.data, cb, auth);
+      p2pController.onData(d.connectionID, d.data, cb, auth, history);
     });
     const ocs = cb.onClose.subscribe((c) => {
       console.log("close", c);

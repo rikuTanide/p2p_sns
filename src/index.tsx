@@ -40,7 +40,6 @@ function createRoomInitialize(
       validatedConnections: [],
     },
     roomID: roomID,
-    members: [],
   };
   return new P2pController(initialState);
 }
@@ -109,7 +108,12 @@ async function main() {
     <React.StrictMode>
       <a href="/">トップ</a>
       <br />
-      <App cb={cb} p2pController={p2pController} auth={auth} />
+      <App
+        cb={cb}
+        p2pController={p2pController}
+        auth={auth}
+        history={historyService}
+      />
     </React.StrictMode>,
     document.getElementById("root")
   );

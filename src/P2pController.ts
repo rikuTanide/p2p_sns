@@ -14,6 +14,7 @@ import { AuthService } from "./AuthService";
 import { DelegateGoingConnection } from "./DelegateGoingConnection";
 import { DelegateComingConnection } from "./DelegateComingConnection";
 import { DelegateValidatedConnection } from "./DelegateValidatedConnection";
+import { HistoryService } from "./HistoryService";
 
 type SetStateCallback = (state: State) => void;
 
@@ -111,7 +112,8 @@ export class P2pController {
     connectionID: string,
     data: any,
     cb: ConnectionBundler,
-    auth: AuthService
+    auth: AuthService,
+    history: HistoryService
   ) {
     const [method, ...payload] = JSON.parse(data) as [string, ...any];
     const connectionType = this.getConnectionType(connectionID);
@@ -136,7 +138,8 @@ export class P2pController {
         connectionID,
         method,
         payload,
-        cb
+        cb,
+        history
       );
     }
   }

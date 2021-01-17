@@ -5,16 +5,19 @@ import { useSns } from "./useStatus";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { P2pController } from "./P2pController";
 import { AuthService } from "./AuthService";
+import { HistoryService } from "./HistoryService";
 
 export const App: React.FunctionComponent<{
   cb: ConnectionBundler;
   p2pController: P2pController;
   auth: AuthService;
+  history: HistoryService;
 }> = (props) => {
   const [state, handler, texts] = useSns(
     props.cb,
     props.p2pController,
-    props.auth
+    props.auth,
+    props.history
   );
 
   const roomID = state.roomID;

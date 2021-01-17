@@ -1,6 +1,7 @@
 import { P2pController } from "./P2pController";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { Comment, State, ValidatedConnection } from "./useStatus";
+import { HistoryService } from "./HistoryService";
 
 export class DelegateValidatedConnection {
   constructor(private p2p: P2pController) {}
@@ -9,24 +10,26 @@ export class DelegateValidatedConnection {
     connectionID: string,
     method: string,
     payload: any[],
-    cb: ConnectionBundler
+    cb: ConnectionBundler,
+    history: HistoryService
   ) {
     if (method == "request-join") {
-      this.onJoin(connectionID, payload, cb);
+      this.onJoin(connectionID, payload, cb, history);
     } else if (method == "comment") {
       this.onComment(connectionID, payload, cb);
     } else if (method == "join-ok") {
-      this.onJoinOk(connectionID, payload, cb);
+      this.onJoinOk(connectionID, payload, cb, history);
     }
   }
 
   private async onJoinOk(
     connectionID: string,
     payload: any[],
-    cb: ConnectionBundler
+    cb: ConnectionBundler,
+    history: HistoryService
   ) {
     const roomID = payload[0];
-    this.mergeMember(roomID, connectionID);
+    this.mergeMember(roomID, connectionID, cb, history);
     const memberRemoteIDs = payload[1] as string[];
 
     for (const memberRemoteID of memberRemoteIDs) {
@@ -38,10 +41,11 @@ export class DelegateValidatedConnection {
   private async onJoin(
     connectionID: string,
     payload: any[],
-    cb: ConnectionBundler
+    cb: ConnectionBundler,
+    history: HistoryService
   ) {
     const roomID = payload[0];
-    this.mergeMember(roomID, connectionID);
+    this.mergeMember(roomID, connectionID, cb, history);
     const memberIDs = this.p2p.state.members
       .filter((m) => m.roomID == roomID)
       .map((c) => this.getRemoteID(c.connectionID))
@@ -95,7 +99,12 @@ export class DelegateValidatedConnection {
     )?.publicKeyDigest;
   }
 
-  public mergeMember(roomID: string, connectionID: string) {
+  public mergeMember(
+    roomID: string,
+    connectionID: string,
+    cb: ConnectionBundler,
+    history: HistoryService
+  ) {
     const nextList = this.p2p.state.members
       .filter((m) => !(m.roomID == roomID && m.connectionID == connectionID))
       .concat({
@@ -109,5 +118,32 @@ export class DelegateValidatedConnection {
 
     this.p2p.state = nextState;
     this.callback(nextState);
+
+    this.updateUrl(roomID, cb, history);
+  }
+
+  private updateUrl(
+    roomID: string,
+    cb: ConnectionBundler,
+    history: HistoryService
+  ) {
+    const remoteIDs = this.getRoomMemberRemoteIDs(roomID, cb);
+    history.setPeers(roomID, remoteIDs);
+  }
+
+  private getRoomMemberRemoteIDs(
+    roomID: string,
+    cb: ConnectionBundler
+  ): string[] {
+    const findPeerID = (connectionID: string): string | undefined =>
+      this.p2p.state.connectionAuthStatus.validatedConnections.find(
+        (c) => c.connectionID == connectionID
+      )?.remoteID;
+
+    return this.p2p.state.members
+      .filter((m) => m.roomID)
+      .map((c) => findPeerID(c.connectionID))
+      .concat(cb.peer.id)
+      .filter((rid) => !!rid) as string[];
   }
 }
