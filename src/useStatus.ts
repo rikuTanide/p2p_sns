@@ -43,8 +43,7 @@ export type ComingConnectionStatus =
 export type GoingConnectionStatus =
   | "connected"
   | "processing-auth-request"
-  | "wait-auth-request"
-  | "request-join";
+  | "wait-auth-request";
 
 export interface GoingConnection {
   status: GoingConnectionStatus;

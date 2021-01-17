@@ -1,6 +1,6 @@
 import { P2pController } from "./P2pController";
 import { ConnectionBundler } from "./ConnectionBundler";
-import { Comment, State } from "./useStatus";
+import { Comment, State, ValidatedConnection } from "./useStatus";
 
 export class DelegateValidatedConnection {
   constructor(private p2p: P2pController) {}
@@ -15,6 +15,23 @@ export class DelegateValidatedConnection {
       this.onJoin(connectionID, payload, cb);
     } else if (method == "comment") {
       this.onComment(connectionID, payload, cb);
+    } else if (method == "join-ok") {
+      this.onJoinOk(connectionID, payload, cb);
+    }
+  }
+
+  private async onJoinOk(
+    connectionID: string,
+    payload: any[],
+    cb: ConnectionBundler
+  ) {
+    const roomID = payload[0];
+    this.mergeMember(roomID, connectionID);
+    const memberRemoteIDs = payload[1] as string[];
+
+    for (const memberRemoteID of memberRemoteIDs) {
+      // 繋がらない場合があるからawaitしない
+      this.p2p.connect(roomID, memberRemoteID, cb);
     }
   }
 
@@ -24,7 +41,7 @@ export class DelegateValidatedConnection {
     cb: ConnectionBundler
   ) {
     const roomID = payload[0];
-    this.p2p.mergeMember(roomID, connectionID);
+    this.mergeMember(roomID, connectionID);
     const memberIDs = this.p2p.state.members
       .filter((m) => m.roomID == roomID)
       .map((c) => this.getRemoteID(c.connectionID))
@@ -35,10 +52,14 @@ export class DelegateValidatedConnection {
     cb.send(connectionID, json);
   }
 
-  private getRemoteID(connectionID: string): string | undefined {
+  private getConnection(connectionID: string): ValidatedConnection | undefined {
     return this.p2p.state.connectionAuthStatus.validatedConnections.find(
       (v) => v.connectionID == connectionID
-    )?.remoteID;
+    );
+  }
+
+  private getRemoteID(connectionID: string): string | undefined {
+    return this.getConnection(connectionID)?.remoteID;
   }
 
   private onComment(
@@ -72,5 +93,21 @@ export class DelegateValidatedConnection {
     return this.p2p.state.connectionAuthStatus.validatedConnections.find(
       (c) => c.connectionID == connectionID
     )?.publicKeyDigest;
+  }
+
+  public mergeMember(roomID: string, connectionID: string) {
+    const nextList = this.p2p.state.members
+      .filter((m) => !(m.roomID == roomID && m.connectionID == connectionID))
+      .concat({
+        connectionID: connectionID,
+        roomID: roomID,
+      });
+    const nextState: State = {
+      ...this.p2p.state,
+      members: nextList,
+    };
+
+    this.p2p.state = nextState;
+    this.callback(nextState);
   }
 }

@@ -57,9 +57,7 @@ export class DelegateGoingConnection {
     if (method == "auth-request") {
       await this.onAuthRequest(connectionID, payload, auth, cb);
     } else if (method == "auth-ok") {
-      await this.onAuthOk(connectionID, cb);
-    } else if (method == "join-ok") {
-      await this.onJoinOk(connectionID, payload, cb, auth);
+      await this.onAuthOk(connectionID, cb, auth);
     }
   }
 
@@ -148,44 +146,24 @@ export class DelegateGoingConnection {
     return this.p2p.getUserName();
   }
 
-  private async onAuthOk(connectionID: string, cb: ConnectionBundler) {
-    const connection = this.getConnection(connectionID);
-    const status = connection?.status;
-    if (status != "wait-auth-request") return;
-
-    this.updateStatus(connectionID, {
-      status: "request-join",
-    });
-    const roomID = this.getRoomID(connectionID);
-    const data = ["request-join", roomID];
-    const json = JSON.stringify(data);
-    cb.send(connectionID, json);
-  }
-
-  private async onJoinOk(
+  private async onAuthOk(
     connectionID: string,
-    payload: any[],
     cb: ConnectionBundler,
     auth: AuthService
   ) {
-    const c = this.getConnection(connectionID);
-    if (!c) return;
+    const connection = this.getConnection(connectionID);
+    const status = connection?.status;
+    if (status != "wait-auth-request") return;
+    if (!connection) return;
 
-    const status = c.status;
-    if (status != "request-join") return;
-
-    const roomID = payload[0];
-    console.assert(roomID == this.getRoomID(connectionID), "roomIDがおかしい");
-
-    await this.validateConnection(connectionID, auth);
-
-    this.mergeMember(c.roomID, c.connectionID);
-    const memberRemoteIDs = payload[1] as string[];
-
-    for (const memberRemoteID of memberRemoteIDs) {
-      // 繋がらない場合があるからawaitしない
-      this.p2p.connect(roomID, memberRemoteID, cb);
-    }
+    await this.p2p.validateConnection(
+      connectionID,
+      connection.remoteID,
+      connection.publicKey,
+      connection.name,
+      auth
+    );
+    this.p2p.requestJoin(connectionID, connection.roomID, cb);
   }
 
   private async validateConnection(connectionID: string, auth: AuthService) {
@@ -201,9 +179,5 @@ export class DelegateGoingConnection {
       c.name,
       auth
     );
-  }
-
-  private mergeMember(roomID: string, connectionID: string) {
-    this.p2p.mergeMember(roomID, connectionID);
   }
 }

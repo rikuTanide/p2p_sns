@@ -211,19 +211,13 @@ export class P2pController {
     return this.state.users.find((o) => o.own)?.name || "";
   }
 
-  public mergeMember(roomID: string, connectionID: string) {
-    const nextList = this.state.members
-      .filter((m) => !(m.roomID == roomID && m.connectionID == connectionID))
-      .concat({
-        connectionID: connectionID,
-        roomID: roomID,
-      });
-    const nextState: State = {
-      ...this.state,
-      members: nextList,
-    };
-
-    this.state = nextState;
-    this.callback(nextState);
+  public requestJoin(
+    connectionID: string,
+    roomID: string,
+    cb: ConnectionBundler
+  ) {
+    const data = ["request-join", roomID];
+    const json = JSON.stringify(data);
+    cb.send(connectionID, json);
   }
 }
