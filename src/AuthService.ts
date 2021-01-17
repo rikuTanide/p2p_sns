@@ -118,7 +118,7 @@ export async function getOwnKeyPair(
       privateKey,
     ] = await generateKeys();
     persistentService.setKeyPair(publicKeyBase64, privateKeyBase64);
-    return [publicKeyBase64, publicKey, publicKey];
+    return [publicKeyBase64, publicKey, privateKey];
   }
 }
 
