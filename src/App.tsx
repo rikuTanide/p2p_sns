@@ -24,6 +24,7 @@ import {
 import MenuIcon from "@material-ui/icons/Menu";
 import { useStyles } from "./useStyles";
 import { EditUserComponent, UsersComponent } from "./UsersComponent";
+import { ConnectionsComponent } from "./ConnectionsComponent";
 
 export const App: React.FunctionComponent<{
   cb: ConnectionBundler;
@@ -126,6 +127,10 @@ export const App: React.FunctionComponent<{
           {me ? <EditUserComponent me={me} /> : ""}
 
           <UsersComponent users={state.users} />
+
+          <ConnectionsComponent
+            connections={state.connectionAuthStatus.validatedConnections}
+          />
         </Grid>
       </Grid>
     </Box>
