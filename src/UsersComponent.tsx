@@ -35,7 +35,7 @@ export const UsersComponent: React.SFC<{ users: User[] }> = (props) => {
                   <>
                     {u.introduce}
                     <br />
-                    <VerifiedUserIcon />
+                    <VerifiedUserIcon fontSize="small" />
                     {u.publicKeyDigest.slice(0, 10)}
                   </>
                 }
@@ -87,7 +87,7 @@ export const EditUserComponent: React.SFC<{
         variant="outlined"
       />
       <p>
-        <VerifiedUserIcon />
+        <VerifiedUserIcon fontSize="small" />
         {props.me.publicKeyDigest.slice(0, 10)}
       </p>
       <Button

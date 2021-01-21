@@ -145,7 +145,7 @@ export class DelegateGoingConnection {
       auth.ownPublicKeyJson,
       sign,
       this.userName(),
-        this.introduce(),
+      this.introduce(),
     ];
     const json = JSON.stringify(data);
     cb.send(connectionID, json);
@@ -155,7 +155,7 @@ export class DelegateGoingConnection {
     return this.p2p.getUserName();
   }
 
-  private introduce() :string{
+  private introduce(): string {
     return this.p2p.getIntroduce();
   }
 

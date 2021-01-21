@@ -42,7 +42,13 @@ export class DelegateComingConnection {
   ) {
     this.addConnection(connectionID, remoteID);
     const sign = await auth.signConnection(connectionID);
-    const data = ["auth-request", auth.ownPublicKeyJson, sign, this.userName(), this.introduce()];
+    const data = [
+      "auth-request",
+      auth.ownPublicKeyJson,
+      sign,
+      this.userName(),
+      this.introduce(),
+    ];
     const json = JSON.stringify(data);
     cb.send(connectionID, json);
     if (this.getStatus(connectionID) != "connected") return;
@@ -80,7 +86,13 @@ export class DelegateComingConnection {
       return;
     }
 
-    await this.validated(connectionID, otherPublicKeyJson, otherUserName, otherIntroduce, auth);
+    await this.validated(
+      connectionID,
+      otherPublicKeyJson,
+      otherUserName,
+      otherIntroduce,
+      auth
+    );
 
     const data = ["auth-ok"];
     const json = JSON.stringify(data);
@@ -92,7 +104,7 @@ export class DelegateComingConnection {
   }
 
   private introduce() {
-    return this.p2p.getIntroduce()
+    return this.p2p.getIntroduce();
   }
 
   private getStatus(connectionID: string): ComingConnectionStatus | undefined {

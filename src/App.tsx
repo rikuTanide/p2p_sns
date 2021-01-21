@@ -119,7 +119,7 @@ export const App: React.FunctionComponent<{
                 </Grid>
               </form>
             </Paper>
-            <CommentsComponent comments={comments} />
+            <CommentsComponent comments={comments} users={state.users} />
           </Container>
         </Grid>
         <Grid item xs={4}>

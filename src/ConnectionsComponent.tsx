@@ -10,6 +10,7 @@ import {
 } from "@material-ui/core";
 import FaceIcon from "@material-ui/core/SvgIcon/SvgIcon";
 import React from "react";
+import VerifiedUserIcon from "@material-ui/icons/VerifiedUser";
 
 export const ConnectionsComponent: React.SFC<{
   connections: ValidatedConnection[];
@@ -30,7 +31,12 @@ export const ConnectionsComponent: React.SFC<{
               </ListItemIcon>
               <ListItemText
                 primary={u.remoteID}
-                secondary={u.publicKeyDigest.slice(0, 10)}
+                secondary={
+                  <>
+                    <VerifiedUserIcon fontSize="small" />
+                    {u.publicKeyDigest.slice(0, 10)}
+                  </>
+                }
               />
             </ListItem>
           ))}
