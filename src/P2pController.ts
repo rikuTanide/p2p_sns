@@ -5,7 +5,8 @@ import {
   ConnectionAuthStatus,
   GoingConnection,
   GoingConnectionStatus,
-  State, User,
+  State,
+  User,
   ValidatedConnection,
 } from "./useStatus";
 import { ConnectionBundler } from "./ConnectionBundler";
@@ -65,7 +66,8 @@ export class P2pController {
   public setUserProfile(
     name: string,
     introduce: string,
-    cb: ConnectionBundler
+    cb: ConnectionBundler,
+    ps: PersistentService
   ) {
     const nextState: State = {
       ...this.state,
@@ -74,6 +76,7 @@ export class P2pController {
       ),
     };
     this.setState(nextState);
+    ps.setProfile(name, introduce);
     for (const connection of this.state.connectionAuthStatus
       .validatedConnections) {
       const data = ["profile", name, introduce];
@@ -224,6 +227,7 @@ export class P2pController {
     remoteID: string,
     publicKey: string,
     name: string,
+    introduce: string,
     auth: AuthService
   ) {
     const cas = this.state.connectionAuthStatus;
@@ -237,14 +241,16 @@ export class P2pController {
     const nextV = cas.validatedConnections.concat(n);
     const nextU: User = {
       publicKeyDigest: publicKeyDigest,
-      introduce: "",
+      introduce: introduce,
       name: name,
       own: publicKey == auth.ownPublicKeyJson,
       publicKey: publicKey,
       trust: false,
       visible: false,
-    }
-    const nextUsers = this.state.users.filter(u => u.publicKeyDigest != publicKeyDigest).concat(nextU);
+    };
+    const nextUsers = this.state.users
+      .filter((u) => u.publicKeyDigest != publicKeyDigest)
+      .concat(nextU);
     const nextState: State = {
       ...this.state,
       connectionAuthStatus: {
@@ -263,6 +269,10 @@ export class P2pController {
 
   public getUserName() {
     return this.state.users.find((o) => o.own)?.name || "";
+  }
+
+  public getIntroduce() {
+    return this.state.users.find((o) => o.own)?.introduce || "";
   }
 
   public requestJoin(

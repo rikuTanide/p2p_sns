@@ -83,14 +83,14 @@ function createOwnUser(
   publicKeyDigest: string,
   persistentService: PersistentService
 ): User {
-  const name = persistentService.getName() || "";
+  const [name, introduce] = persistentService.getProfile();
   return {
     own: true,
     trust: true,
     publicKey: publicKey,
     publicKeyDigest: publicKeyDigest,
-    name: name,
-    introduce: "",
+    name: name || "",
+    introduce: introduce || "",
     visible: true,
   };
 }
@@ -122,6 +122,7 @@ async function main() {
         p2pController={p2pController}
         auth={auth}
         history={historyService}
+        persistent={persistentService}
       />
     </React.StrictMode>,
     document.getElementById("root")

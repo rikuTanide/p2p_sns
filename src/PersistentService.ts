@@ -10,11 +10,15 @@ export class PersistentService {
     window.localStorage.setItem("private-key", privateKeyBase64);
   }
 
-  public getName(): string | null {
-    return window.localStorage.getItem("name");
+  public getProfile(): [string | null, string | null] {
+    return [
+      window.localStorage.getItem("name"),
+      window.localStorage.getItem("introduce"),
+    ];
   }
 
-  private setName(name: string) {
+  public setProfile(name: string, introduce: string) {
     window.localStorage.setItem("name", name);
+    window.localStorage.setItem("introduce", introduce);
   }
 }

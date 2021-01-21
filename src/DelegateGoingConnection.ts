@@ -21,6 +21,7 @@ export class DelegateGoingConnection {
       remoteID: remoteID,
       name: "",
       publicKey: "",
+      introduce: "",
     });
     const nextState: State = {
       ...now,
@@ -73,6 +74,7 @@ export class DelegateGoingConnection {
       remoteID?: string;
       status?: GoingConnectionStatus;
       name?: string;
+      introduce?: string;
       publicKey?: string;
     }
   ) {
@@ -85,6 +87,7 @@ export class DelegateGoingConnection {
       status: attr.status || c.status,
       name: attr.name || c.name || "",
       publicKey: attr.publicKey || c.publicKey,
+      introduce: attr.introduce || c.introduce,
     };
 
     const nextList = this.p2p.state.connectionAuthStatus.goingConnections
@@ -121,7 +124,7 @@ export class DelegateGoingConnection {
     const otherPublicKeyJson = payload[0];
     const otherSign = payload[1];
     const otherUserName = payload[2];
-    const roomID = this.getRoomID(connectionID);
+    const otherIntroduce = payload[3];
 
     const ok = await auth.verify(connectionID, otherPublicKeyJson, otherSign);
     if (!ok) {
@@ -133,14 +136,16 @@ export class DelegateGoingConnection {
     this.updateStatus(connectionID, {
       status: "wait-auth-request",
       name: otherUserName,
+      publicKey: otherPublicKeyJson,
+      introduce: otherIntroduce,
     });
     const sign = await auth.signConnection(connectionID);
     const data = [
       "auth-request",
       auth.ownPublicKeyJson,
       sign,
-      roomID,
       this.userName(),
+        this.introduce(),
     ];
     const json = JSON.stringify(data);
     cb.send(connectionID, json);
@@ -148,6 +153,10 @@ export class DelegateGoingConnection {
 
   private userName(): string {
     return this.p2p.getUserName();
+  }
+
+  private introduce() :string{
+    return this.p2p.getIntroduce();
   }
 
   private async onAuthOk(
@@ -165,9 +174,9 @@ export class DelegateGoingConnection {
       connection.remoteID,
       connection.publicKey,
       connection.name,
+      connection.introduce,
       auth
     );
     this.p2p.requestJoin(connectionID, connection.roomID, cb);
   }
-
 }

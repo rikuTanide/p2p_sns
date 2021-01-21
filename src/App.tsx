@@ -26,12 +26,14 @@ import { useStyles } from "./useStyles";
 import { EditUserComponent, UsersComponent } from "./UsersComponent";
 import { ConnectionsComponent } from "./ConnectionsComponent";
 import { CommentsComponent } from "./CommentsComponent";
+import { PersistentService } from "./PersistentService";
 
 export const App: React.FunctionComponent<{
   cb: ConnectionBundler;
   p2pController: P2pController;
   auth: AuthService;
   history: HistoryService;
+  persistent: PersistentService;
 }> = (props) => {
   const [state, handler, texts] = useSns(
     props.cb,
@@ -53,7 +55,12 @@ export const App: React.FunctionComponent<{
   }
 
   function setUserProfile(name: string, introduce: string) {
-    props.p2pController.setUserProfile(name, introduce, props.cb);
+    props.p2pController.setUserProfile(
+      name,
+      introduce,
+      props.cb,
+      props.persistent
+    );
   }
 
   const comments = state.comments.filter((c) => c.roomID == roomID);

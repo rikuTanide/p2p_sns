@@ -53,6 +53,7 @@ export interface GoingConnection {
   connectionID: string;
   publicKey: string;
   name: string;
+  introduce: string;
 }
 
 export interface ComingConnection {
