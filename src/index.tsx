@@ -4,7 +4,7 @@ import "./index.css";
 import Peer from "skyway-js";
 import { AuthService, getOwnKeyPair } from "./AuthService";
 import App from "./App";
-import {  State, User } from "./useStatus";
+import { State, User } from "./useStatus";
 import { HistoryService } from "./HistoryService";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { P2pController } from "./P2pController";
@@ -117,8 +117,6 @@ async function main() {
 
   ReactDOM.render(
     <React.StrictMode>
-      <a href="/">トップ</a>
-      <br />
       <App
         cb={cb}
         p2pController={p2pController}

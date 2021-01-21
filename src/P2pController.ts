@@ -20,8 +20,8 @@ import { BehaviorSubject, Observable } from "rxjs";
 export class P2pController {
   private readonly stateSubject: BehaviorSubject<State>;
 
-  public get subject():BehaviorSubject<State> {
-    return this.stateSubject
+  public get subject(): BehaviorSubject<State> {
+    return this.stateSubject;
   }
 
   public constructor(state: State) {

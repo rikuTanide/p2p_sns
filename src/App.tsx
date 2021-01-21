@@ -6,6 +6,24 @@ import { ConnectionBundler } from "./ConnectionBundler";
 import { P2pController } from "./P2pController";
 import { AuthService } from "./AuthService";
 import { HistoryService } from "./HistoryService";
+import SendIcon from "@material-ui/icons/Send";
+import {
+  AppBar,
+  Box,
+  Button,
+  IconButton,
+  Toolbar,
+  Typography,
+  Menu,
+  Link,
+  Grid,
+  TextField,
+  Container,
+  Paper,
+} from "@material-ui/core";
+import MenuIcon from "@material-ui/icons/Menu";
+import { useStyles } from "./useStyles";
+import { EditUserComponent, UsersComponent } from "./UsersComponent";
 
 export const App: React.FunctionComponent<{
   cb: ConnectionBundler;
@@ -39,28 +57,78 @@ export const App: React.FunctionComponent<{
     return ownDigest == digest;
   }
 
-  return (
-    <div>
-      <input type="text" value={text} onChange={onTextChange} />
-      <button onClick={onSubmit}>送信</button>
+  const classes = useStyles();
 
-      {comments.map((c, i) => (
-        <div key={i}>
-          <div>
-            {c.publicKeyDigest}
-            {isOwn(c.publicKeyDigest) ? "☑" : ""}
-          </div>
-          {c.text}
-        </div>
-      ))}
-      <div style={{ border: "solid 1px black" }}>
-        <div>{props.cb.peer.id}</div>
-        <hr />
-        {state.connectionAuthStatus.validatedConnections.map((u) => (
-          <div key={u.remoteID}>{u.remoteID}</div>
-        ))}
-      </div>
-    </div>
+  const me = state.users.find((u) => u.own);
+
+  return (
+    <Box className={classes.background}>
+      <AppBar position="static">
+        <Toolbar>
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            className={classes.menuButton}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h1" className={classes.title}>
+            enc.live
+          </Typography>
+          <Link color="inherit" href="/">
+            新規ルーム
+          </Link>
+        </Toolbar>
+      </AppBar>
+      <Grid container>
+        <Grid item xs={8}>
+          <Container>
+            <Paper className={classes.paper}>
+              <form className={classes.root} noValidate autoComplete="off">
+                <Grid container>
+                  <Grid item xs={10}>
+                    <TextField
+                      id="outlined-multiline-static"
+                      label="書き込み"
+                      multiline
+                      rows={4}
+                      variant="outlined"
+                      value={text}
+                      onChange={onTextChange}
+                      fullWidth
+                    />
+                  </Grid>
+                  <Grid item xs={2}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={onSubmit}
+                    >
+                      <SendIcon />
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
+            </Paper>
+            {comments.map((c, i) => (
+              <div key={i}>
+                <div>
+                  {c.publicKeyDigest}
+                  {isOwn(c.publicKeyDigest) ? "☑" : ""}
+                </div>
+                {c.text}
+              </div>
+            ))}
+          </Container>
+        </Grid>
+        <Grid item xs={4}>
+          {me ? <EditUserComponent me={me} /> : ""}
+
+          <UsersComponent users={state.users} />
+        </Grid>
+      </Grid>
+    </Box>
   );
 };
 
