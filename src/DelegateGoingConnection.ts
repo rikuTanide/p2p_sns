@@ -63,7 +63,7 @@ export class DelegateGoingConnection {
 
   private getConnection(connectionID: string): GoingConnection | undefined {
     return this.p2p.state.connectionAuthStatus.goingConnections.find(
-      (c) => c.connectionID
+      (c) => c.connectionID == connectionID
     );
   }
 
@@ -113,7 +113,11 @@ export class DelegateGoingConnection {
   ) {
     const connection = this.getConnection(connectionID);
     const status = connection?.status;
-    if (status != "connected") return;
+    if (status != "connected") {
+      console.log(connection);
+      throw "not connected";
+      return;
+    }
     this.updateStatus(connectionID, { status: "processing-auth-request" });
     const otherPublicKeyJson = payload[0];
     const otherSign = payload[1];
@@ -122,6 +126,7 @@ export class DelegateGoingConnection {
 
     const ok = await auth.verify(connectionID, otherPublicKeyJson, otherSign);
     if (!ok) {
+      throw "auth error";
       cb.close(connectionID);
       return;
     }

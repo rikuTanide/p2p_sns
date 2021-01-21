@@ -87,7 +87,11 @@ export class P2pController {
     }
   }
 
-  public onClose(connectionID: string) {
+  public onClose(
+    connectionID: string,
+    cb: ConnectionBundler,
+    history: HistoryService
+  ) {
     const next: ConnectionAuthStatus = {
       comingConnections: this.state.connectionAuthStatus.comingConnections.filter(
         (c) => c.connectionID != connectionID
@@ -99,13 +103,22 @@ export class P2pController {
         (c) => c.connectionID != connectionID
       ),
     };
-
+    const members = this.state.members.filter(
+      (m) => m.connectionID != connectionID
+    );
     const nextState: State = {
       ...this.state,
       connectionAuthStatus: next,
+      members: members,
     };
 
+    this.state = nextState;
     this.callback(nextState);
+    new DelegateValidatedConnection(this).updateUrl(
+      this.state.roomID,
+      cb,
+      history
+    );
   }
 
   public async onData(

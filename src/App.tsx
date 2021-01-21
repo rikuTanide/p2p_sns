@@ -53,6 +53,13 @@ export const App: React.FunctionComponent<{
           {c.text}
         </div>
       ))}
+      <div style={{ border: "solid 1px black" }}>
+        <div>{props.cb.peer.id}</div>
+        <hr />
+        {state.connectionAuthStatus.validatedConnections.map((u) => (
+          <div key={u.remoteID}>{u.remoteID}</div>
+        ))}
+      </div>
     </div>
   );
 };

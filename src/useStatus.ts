@@ -126,7 +126,7 @@ export function useSns(
     });
     const ocs = cb.onClose.subscribe((c) => {
       console.log("close", c);
-      p2pController.onClose(c.connectionID);
+      p2pController.onClose(c.connectionID, cb, history);
     });
 
     return () => {

@@ -122,7 +122,7 @@ export class DelegateValidatedConnection {
     this.updateUrl(roomID, cb, history);
   }
 
-  private updateUrl(
+  public updateUrl(
     roomID: string,
     cb: ConnectionBundler,
     history: HistoryService

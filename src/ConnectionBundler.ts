@@ -37,12 +37,12 @@ export class ConnectionBundler {
           connectionID: con.id,
         });
       });
-      con.on('error', e => {
-        console.error(e)
+      con.on("error", (e) => {
+        console.error(e);
       });
     });
-    peer.on('error', e => {
-      console.error(e)
+    peer.on("error", (e) => {
+      console.error(e);
     });
   }
 
@@ -57,6 +57,7 @@ export class ConnectionBundler {
       const other = this.peer.connect(remoteID);
       this.map.set(other.id, other);
       other.on("open", () => {
+        console.log(["connect", other.id, remoteID]);
         solve(other.id);
       });
       other.on("data", (data) => {
@@ -71,8 +72,8 @@ export class ConnectionBundler {
           connectionID: other.id,
         });
       });
-      other.on('error', e => {
-        console.error(e)
+      other.on("error", (e) => {
+        console.error(e);
       });
     });
   }
