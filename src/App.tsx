@@ -52,6 +52,10 @@ export const App: React.FunctionComponent<{
     handler.onSubmit(roomID);
   }
 
+  function setUserProfile(name: string, introduce: string) {
+    props.p2pController.setUserProfile(name, introduce, props.cb);
+  }
+
   const comments = state.comments.filter((c) => c.roomID == roomID);
 
   const classes = useStyles();
@@ -112,7 +116,11 @@ export const App: React.FunctionComponent<{
           </Container>
         </Grid>
         <Grid item xs={4}>
-          {me ? <EditUserComponent me={me} /> : ""}
+          {me ? (
+            <EditUserComponent setUserProfile={setUserProfile} me={me} />
+          ) : (
+            ""
+          )}
 
           <UsersComponent users={state.users} />
 

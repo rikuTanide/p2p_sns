@@ -5,7 +5,7 @@ import {
   ConnectionAuthStatus,
   GoingConnection,
   GoingConnectionStatus,
-  State,
+  State, User,
   ValidatedConnection,
 } from "./useStatus";
 import { ConnectionBundler } from "./ConnectionBundler";
@@ -59,6 +59,26 @@ export class P2pController {
       const data = ["comment", roomID, text];
       const j = JSON.stringify(data);
       cb.send(connectionID, j);
+    }
+  }
+
+  public setUserProfile(
+    name: string,
+    introduce: string,
+    cb: ConnectionBundler
+  ) {
+    const nextState: State = {
+      ...this.state,
+      users: this.state.users.map((u) =>
+        u.own ? { ...u, name: name, introduce: introduce } : u
+      ),
+    };
+    this.setState(nextState);
+    for (const connection of this.state.connectionAuthStatus
+      .validatedConnections) {
+      const data = ["profile", name, introduce];
+      const j = JSON.stringify(data);
+      cb.send(connection.connectionID, j);
     }
   }
 
@@ -215,6 +235,16 @@ export class P2pController {
       publicKeyDigest: publicKeyDigest,
     };
     const nextV = cas.validatedConnections.concat(n);
+    const nextU: User = {
+      publicKeyDigest: publicKeyDigest,
+      introduce: "",
+      name: name,
+      own: publicKey == auth.ownPublicKeyJson,
+      publicKey: publicKey,
+      trust: false,
+      visible: false,
+    }
+    const nextUsers = this.state.users.filter(u => u.publicKeyDigest != publicKeyDigest).concat(nextU);
     const nextState: State = {
       ...this.state,
       connectionAuthStatus: {
@@ -226,6 +256,7 @@ export class P2pController {
         ),
         validatedConnections: nextV,
       },
+      users: nextUsers,
     };
     this.setState(nextState);
   }

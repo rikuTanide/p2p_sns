@@ -47,8 +47,11 @@ export const UsersComponent: React.SFC<{ users: User[] }> = (props) => {
     </Paper>
   );
 };
-
-export const EditUserComponent: React.SFC<{ me: User }> = (props) => {
+export type SetUserProfile = (name: string, introduce: string) => void;
+export const EditUserComponent: React.SFC<{
+  me: User;
+  setUserProfile: SetUserProfile;
+}> = (props) => {
   const [name, setName] = useState(props.me.name);
   const [introduce, setIntroduce] = useState(props.me.introduce);
   const classes = useStyles();
@@ -62,6 +65,10 @@ export const EditUserComponent: React.SFC<{ me: User }> = (props) => {
   }
 
   const changed = !(name == props.me.name && introduce == props.me.introduce);
+
+  function onSubmit() {
+    props.setUserProfile(name, introduce);
+  }
 
   return (
     <Paper className={classes.paper}>
@@ -83,7 +90,12 @@ export const EditUserComponent: React.SFC<{ me: User }> = (props) => {
         <VerifiedUserIcon />
         {props.me.publicKeyDigest.slice(0, 10)}
       </p>
-      <Button size="small" color="primary" disabled={!changed}>
+      <Button
+        size="small"
+        color="primary"
+        disabled={!changed}
+        onClick={onSubmit}
+      >
         保存
       </Button>
     </Paper>

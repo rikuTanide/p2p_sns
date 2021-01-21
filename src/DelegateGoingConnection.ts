@@ -83,7 +83,7 @@ export class DelegateGoingConnection {
       roomID: attr.roomID || c.roomID,
       remoteID: attr.remoteID || c.remoteID,
       status: attr.status || c.status,
-      name: attr.status || c.status || "",
+      name: attr.name || c.name || "",
       publicKey: attr.publicKey || c.publicKey,
     };
 
@@ -170,18 +170,4 @@ export class DelegateGoingConnection {
     this.p2p.requestJoin(connectionID, connection.roomID, cb);
   }
 
-  private async validateConnection(connectionID: string, auth: AuthService) {
-    const c = this.getConnection(connectionID);
-    if (!c) {
-      throw "nai";
-    }
-
-    await this.p2p.validateConnection(
-      connectionID,
-      c.remoteID,
-      c.publicKey,
-      c.name,
-      auth
-    );
-  }
 }

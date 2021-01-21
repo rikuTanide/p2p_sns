@@ -19,6 +19,8 @@ export class DelegateValidatedConnection {
       this.onComment(connectionID, payload, cb);
     } else if (method == "join-ok") {
       this.onJoinOk(connectionID, payload, cb, history);
+    } else if (method == "profile") {
+      this.onProfile(connectionID, payload);
     }
   }
 
@@ -142,5 +144,22 @@ export class DelegateValidatedConnection {
       .map((c) => findPeerID(c.connectionID))
       .concat(cb.peer.id)
       .filter((rid) => !!rid) as string[];
+  }
+
+  private onProfile(connectionID: string, payload: any[]) {
+    const name = payload[0];
+    const introduce = payload[1];
+    const digest = this.p2p.state.connectionAuthStatus.validatedConnections.find(
+      (u) => u.connectionID == connectionID
+    )?.publicKeyDigest;
+    const nextState: State = {
+      ...this.p2p.state,
+      users: this.p2p.state.users.map((u) =>
+        u.publicKeyDigest == digest
+          ? { ...u, name: name, introduce: introduce }
+          : u
+      ),
+    };
+    this.callback(nextState);
   }
 }
