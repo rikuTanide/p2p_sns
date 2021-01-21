@@ -89,8 +89,7 @@ export class DelegateValidatedConnection {
   }
 
   private callback(state: State) {
-    this.p2p.state = state;
-    this.p2p.callback(state);
+    this.p2p.setState(state);
   }
 
   private getPublicKeyDigest(connectionID: string): string | undefined {
@@ -116,9 +115,7 @@ export class DelegateValidatedConnection {
       members: nextList,
     };
 
-    this.p2p.state = nextState;
     this.callback(nextState);
-
     this.updateUrl(roomID, cb, history);
   }
 

@@ -43,8 +43,7 @@ export class DelegateGoingConnection {
   }
 
   private callback(state: State) {
-    this.p2p.state = state;
-    this.p2p.callback(state);
+    this.p2p.setState(state);
   }
 
   async onData(

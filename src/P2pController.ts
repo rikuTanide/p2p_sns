@@ -15,15 +15,25 @@ import { DelegateGoingConnection } from "./DelegateGoingConnection";
 import { DelegateComingConnection } from "./DelegateComingConnection";
 import { DelegateValidatedConnection } from "./DelegateValidatedConnection";
 import { HistoryService } from "./HistoryService";
-
-type SetStateCallback = (state: State) => void;
+import { BehaviorSubject, Observable } from "rxjs";
 
 export class P2pController {
-  public state: State;
-  public callback: SetStateCallback = (state: State) => {};
+  private readonly stateSubject: BehaviorSubject<State>;
+
+  public get subject():BehaviorSubject<State> {
+    return this.stateSubject
+  }
 
   public constructor(state: State) {
-    this.state = state;
+    this.stateSubject = new BehaviorSubject<State>(state);
+  }
+
+  public get state(): State {
+    return this.stateSubject.value;
+  }
+
+  public setState(state: State) {
+    this.stateSubject.next(state);
   }
 
   public send(roomID: string, text: string, cb: ConnectionBundler) {
@@ -40,8 +50,7 @@ export class P2pController {
       comments: nextComments,
     };
 
-    this.state = state;
-    this.callback(state);
+    this.setState(state);
 
     const memberConnectionIDs = this.roomConnections(roomID).map(
       (c) => c.connectionID
@@ -112,8 +121,7 @@ export class P2pController {
       members: members,
     };
 
-    this.state = nextState;
-    this.callback(nextState);
+    this.setState(nextState);
     new DelegateValidatedConnection(this).updateUrl(
       this.state.roomID,
       cb,
@@ -219,8 +227,7 @@ export class P2pController {
         validatedConnections: nextV,
       },
     };
-    this.state = nextState;
-    this.callback(nextState);
+    this.setState(nextState);
   }
 
   public getUserName() {

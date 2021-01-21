@@ -4,7 +4,7 @@ import "./index.css";
 import Peer from "skyway-js";
 import { AuthService, getOwnKeyPair } from "./AuthService";
 import App from "./App";
-import { defaultState, State, User } from "./useStatus";
+import {  State, User } from "./useStatus";
 import { HistoryService } from "./HistoryService";
 import { ConnectionBundler } from "./ConnectionBundler";
 import { P2pController } from "./P2pController";
@@ -24,13 +24,24 @@ function createRoom(): string {
   return AuthService.random();
 }
 
+const defaultState: State = {
+  roomID: "",
+  connectionAuthStatus: {
+    comingConnections: [],
+    goingConnections: [],
+    validatedConnections: [],
+  },
+  users: [],
+  members: [],
+  comments: [],
+};
+
 function createRoomInitialize(
   ownUser: User,
   historyService: HistoryService,
   peerID: string
 ): P2pController {
   const roomID = createRoom();
-  // console.log()
   historyService.setRoom(roomID, peerID);
   const initialState: State = {
     ...defaultState,

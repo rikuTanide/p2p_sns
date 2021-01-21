@@ -75,18 +75,6 @@ export interface ConnectionAuthStatus {
 
 const skyWayKey = "77157c8d-8852-4dd0-b465-10f57625ffc7";
 
-export const defaultState: State = {
-  roomID: "",
-  connectionAuthStatus: {
-    comingConnections: [],
-    goingConnections: [],
-    validatedConnections: [],
-  },
-  users: [],
-  members: [],
-  comments: [],
-};
-
 export interface InputText {
   roomID: string;
   text: string;
@@ -114,8 +102,7 @@ export function useSns(
   const [texts, setTexts] = useState<InputText[]>([]);
 
   useEffect(() => {
-    p2pController.callback = setState;
-    p2pController.state = state;
+    const os = p2pController.subject.subscribe((s) => setState(s));
     const oos = cb.onOpen.subscribe((o) => {
       console.log(["open", o]);
       p2pController.onOpen(o.connectionID, o.remoteID, cb, auth);
@@ -130,6 +117,7 @@ export function useSns(
     });
 
     return () => {
+      os.unsubscribe();
       oos.unsubscribe();
       ods.unsubscribe();
       ocs.unsubscribe();
