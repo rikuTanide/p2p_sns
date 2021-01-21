@@ -115,6 +115,10 @@ async function main() {
     ? joinInitialize(ownUser, historyService, cb)
     : createRoomInitialize(ownUser, historyService, peer.id);
 
+  window.addEventListener('beforeunload', () => {
+    cb.peer.destroy();
+  });
+
   ReactDOM.render(
     <React.StrictMode>
       <App
