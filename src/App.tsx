@@ -25,6 +25,7 @@ import MenuIcon from "@material-ui/icons/Menu";
 import { useStyles } from "./useStyles";
 import { EditUserComponent, UsersComponent } from "./UsersComponent";
 import { ConnectionsComponent } from "./ConnectionsComponent";
+import { CommentsComponent } from "./CommentsComponent";
 
 export const App: React.FunctionComponent<{
   cb: ConnectionBundler;
@@ -52,11 +53,6 @@ export const App: React.FunctionComponent<{
   }
 
   const comments = state.comments.filter((c) => c.roomID == roomID);
-
-  const ownDigest = state.users.find((u) => u.own)?.publicKeyDigest;
-  function isOwn(digest: string): boolean {
-    return ownDigest == digest;
-  }
 
   const classes = useStyles();
 
@@ -112,15 +108,7 @@ export const App: React.FunctionComponent<{
                 </Grid>
               </form>
             </Paper>
-            {comments.map((c, i) => (
-              <div key={i}>
-                <div>
-                  {c.publicKeyDigest}
-                  {isOwn(c.publicKeyDigest) ? "☑" : ""}
-                </div>
-                {c.text}
-              </div>
-            ))}
+            <CommentsComponent comments={comments} />
           </Container>
         </Grid>
         <Grid item xs={4}>

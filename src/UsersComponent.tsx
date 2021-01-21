@@ -12,7 +12,7 @@ import {
   ListItemText,
 } from "@material-ui/core";
 import { useStyles } from "./useStyles";
-import VpnKeyIcon from "@material-ui/icons/VpnKey";
+import VerifiedUserIcon from "@material-ui/icons/VerifiedUser";
 import FaceIcon from "@material-ui/icons/Face";
 export const UsersComponent: React.SFC<{ users: User[] }> = (props) => {
   const classes = useStyles();
@@ -35,6 +35,7 @@ export const UsersComponent: React.SFC<{ users: User[] }> = (props) => {
                   <>
                     {u.introduce}
                     <br />
+                    <VerifiedUserIcon />
                     {u.publicKeyDigest.slice(0, 10)}
                   </>
                 }
@@ -79,7 +80,7 @@ export const EditUserComponent: React.SFC<{ me: User }> = (props) => {
         variant="outlined"
       />
       <p>
-        <VpnKeyIcon />
+        <VerifiedUserIcon />
         {props.me.publicKeyDigest.slice(0, 10)}
       </p>
       <Button size="small" color="primary" disabled={!changed}>

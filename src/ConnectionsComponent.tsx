@@ -24,7 +24,7 @@ export const ConnectionsComponent: React.SFC<{
       <div>
         <List>
           {props.connections.map((u) => (
-            <ListItem alignItems="flex-start" key={u.publicKeyDigest}>
+            <ListItem alignItems="flex-start" key={u.remoteID}>
               <ListItemIcon>
                 <FaceIcon />
               </ListItemIcon>
