@@ -284,4 +284,9 @@ export class P2pController {
     const json = JSON.stringify(data);
     cb.send(connectionID, json);
   }
+
+  public onUrlChange(url: string) {
+    const next: State = {...this.state, url: url};
+    this.setState(next);
+  }
 }

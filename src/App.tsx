@@ -1,5 +1,4 @@
 import React, { ChangeEvent } from "react";
-import logo from "./logo.svg";
 import "./App.css";
 import { useSns } from "./useStatus";
 import { ConnectionBundler } from "./ConnectionBundler";
@@ -7,6 +6,7 @@ import { P2pController } from "./P2pController";
 import { AuthService } from "./AuthService";
 import { HistoryService } from "./HistoryService";
 import SendIcon from "@material-ui/icons/Send";
+
 import {
   AppBar,
   Box,
@@ -92,6 +92,19 @@ export const App: React.FunctionComponent<{
       <Grid container>
         <Grid item xs={8}>
           <Container>
+            <Paper className={classes.paper}>
+              このURLを共有しましょう。
+              <TextField
+                  id="filled-read-only-input"
+                  label="Read Only"
+                  value={state.url}
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  fullWidth
+                  variant="filled"
+              />
+            </Paper>
             <Paper className={classes.paper}>
               <form className={classes.root} noValidate autoComplete="off">
                 <Grid container>

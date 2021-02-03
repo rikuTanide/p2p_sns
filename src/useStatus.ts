@@ -13,6 +13,7 @@ export interface State {
   users: User[];
   members: Member[];
   comments: Comment[];
+  url: string;
 }
 
 export interface Member {

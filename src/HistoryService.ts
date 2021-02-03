@@ -1,7 +1,15 @@
-import { HashHistory, History } from "history";
+import { HashHistory } from "history";
+import {Observable, Subject} from "rxjs";
 
 export class HistoryService {
+
+  private subject: Subject<string> = new Subject<string>();
+
   constructor(private history: HashHistory) {}
+
+  public onUrlChange() : Observable<string> {
+    return this.subject;
+  }
 
   public getRoomID(): string | null {
     return new URLSearchParams(this.history.location.search).get("room");
@@ -12,6 +20,7 @@ export class HistoryService {
     p.set("room", roomID);
     p.set("peer", peerID);
     this.history.push("?" + p.toString());
+    this.subject.next(window.location.href);
   }
 
   public getPeers(): string[] {
@@ -25,5 +34,6 @@ export class HistoryService {
       params.append("peer", remoteID);
     }
     this.history.push("?" + params.toString());
+    this.subject.next(window.location.href);
   }
 }

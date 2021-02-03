@@ -34,6 +34,7 @@ const defaultState: State = {
   users: [],
   members: [],
   comments: [],
+  url: "",
 };
 
 function createRoomInitialize(
@@ -117,6 +118,12 @@ async function main() {
 
   window.addEventListener('beforeunload', () => {
     cb.peer.destroy();
+  });
+
+  p2pController.onUrlChange(window.location.href);
+
+  historyService.onUrlChange().subscribe(h => {
+    p2pController.onUrlChange(h);
   });
 
   ReactDOM.render(
