@@ -1,10 +1,6 @@
 import {
-  ComingConnection,
-  ComingConnectionStatus,
   Comment,
   ConnectionAuthStatus,
-  GoingConnection,
-  GoingConnectionStatus,
   State,
   User,
   ValidatedConnection,
@@ -16,7 +12,7 @@ import { DelegateGoingConnection } from "./DelegateGoingConnection";
 import { DelegateComingConnection } from "./DelegateComingConnection";
 import { DelegateValidatedConnection } from "./DelegateValidatedConnection";
 import { HistoryService } from "./HistoryService";
-import { BehaviorSubject, Observable } from "rxjs";
+import { BehaviorSubject } from "rxjs";
 
 export class P2pController {
   private readonly stateSubject: BehaviorSubject<State>;
@@ -286,7 +282,7 @@ export class P2pController {
   }
 
   public onUrlChange(url: string) {
-    const next: State = {...this.state, url: url};
+    const next: State = { ...this.state, url: url };
     this.setState(next);
   }
 }

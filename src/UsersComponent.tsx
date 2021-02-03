@@ -1,19 +1,19 @@
 import { User } from "./useStatus";
 import React, { ChangeEvent, useState } from "react";
 import {
-  Container,
-  Paper,
-  Typography,
   Button,
-  TextField,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
+  Paper,
+  TextField,
+  Typography,
 } from "@material-ui/core";
 import { useStyles } from "./useStyles";
 import VerifiedUserIcon from "@material-ui/icons/VerifiedUser";
 import FaceIcon from "@material-ui/icons/Face";
+
 export const UsersComponent: React.SFC<{ users: User[] }> = (props) => {
   const classes = useStyles();
 

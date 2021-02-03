@@ -116,13 +116,13 @@ async function main() {
     ? joinInitialize(ownUser, historyService, cb)
     : createRoomInitialize(ownUser, historyService, peer.id);
 
-  window.addEventListener('beforeunload', () => {
+  window.addEventListener("beforeunload", () => {
     cb.peer.destroy();
   });
 
   p2pController.onUrlChange(window.location.href);
 
-  historyService.onUrlChange().subscribe(h => {
+  historyService.onUrlChange().subscribe((h) => {
     p2pController.onUrlChange(h);
   });
 

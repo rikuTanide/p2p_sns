@@ -11,15 +11,14 @@ import {
   AppBar,
   Box,
   Button,
+  Container,
+  Grid,
   IconButton,
+  Link,
+  Paper,
+  TextField,
   Toolbar,
   Typography,
-  Menu,
-  Link,
-  Grid,
-  TextField,
-  Container,
-  Paper,
 } from "@material-ui/core";
 import MenuIcon from "@material-ui/icons/Menu";
 import { useStyles } from "./useStyles";
@@ -95,14 +94,14 @@ export const App: React.FunctionComponent<{
             <Paper className={classes.paper}>
               このURLを共有しましょう。
               <TextField
-                  id="filled-read-only-input"
-                  label="Read Only"
-                  value={state.url}
-                  InputProps={{
-                    readOnly: true,
-                  }}
-                  fullWidth
-                  variant="filled"
+                id="filled-read-only-input"
+                label="Read Only"
+                value={state.url}
+                InputProps={{
+                  readOnly: true,
+                }}
+                fullWidth
+                variant="filled"
               />
             </Paper>
             <Paper className={classes.paper}>

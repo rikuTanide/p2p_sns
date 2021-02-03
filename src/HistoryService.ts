@@ -1,13 +1,12 @@
 import { HashHistory } from "history";
-import {Observable, Subject} from "rxjs";
+import { Observable, Subject } from "rxjs";
 
 export class HistoryService {
-
   private subject: Subject<string> = new Subject<string>();
 
   constructor(private history: HashHistory) {}
 
-  public onUrlChange() : Observable<string> {
+  public onUrlChange(): Observable<string> {
     return this.subject;
   }
 

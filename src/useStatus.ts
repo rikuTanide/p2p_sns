@@ -1,5 +1,3 @@
-import Peer, { DataConnection } from "skyway-js";
-import { Subject } from "rxjs";
 // import { ConnectionBundle } from "./ConnectionBundle";
 import { useEffect, useState } from "react";
 import { ConnectionBundler } from "./ConnectionBundler";
